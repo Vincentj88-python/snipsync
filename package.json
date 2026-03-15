@@ -1,5 +1,5 @@
 {
-  "name": "snip",
+  "name": "snipsync",
   "version": "0.1.0",
   "private": true,
   "description": "Cross-device clipboard and quick-notes syncing app",
@@ -33,7 +33,7 @@
   },
   "build": {
     "appId": "xyz.snipsync.app",
-    "productName": "Snip",
+    "productName": "SnipSync",
     "directories": {
       "output": "release"
     },

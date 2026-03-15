@@ -176,6 +176,18 @@ textarea {
   font-size: 18px;
 }
 
+.signin-logo-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.titlebar-logo-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
 .signin-logo-text {
   font-size: 22px;
   font-weight: 600;

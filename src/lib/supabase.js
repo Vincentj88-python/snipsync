@@ -119,8 +119,8 @@ export const uploadClipImage = async (userId, file) => {
   return { data: { path: data.path }, error: null }
 }
 
-export const getImageUrl = (imagePath) => {
-  const { data } = supabase.storage
+export const getImageUrl = async (imagePath) => {
+  const { data } = await supabase.storage
     .from('clip-images')
     .createSignedUrl(imagePath, 3600)
   return data?.signedUrl || ''

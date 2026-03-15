@@ -19,7 +19,7 @@ if (!isDev) {
   Sentry.init({
     dsn: 'https://e7ddc742366a1d89e3e5661d3b9cdb8e@o4511048248918016.ingest.de.sentry.io/4511048252981328',
     environment: isDev ? 'development' : 'production',
-    release: `snip@${app.getVersion()}`,
+    release: `snipsync@${app.getVersion()}`,
   })
 }
 
@@ -111,7 +111,7 @@ function createTray() {
   }
 
   tray = new Tray(resizedIcon)
-  tray.setToolTip('Snip')
+  tray.setToolTip('SnipSync')
   tray.on('click', () => {
     toggleWindow()
   })

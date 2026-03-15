@@ -136,14 +136,17 @@ export default function App() {
           }
         }
 
+        // Fetch subscription early — needed for device limit check
+        const sub = await getSubscription(user.id)
+        if (sub) setSubscription(sub)
+        const currentPlanLimits = PLAN_LIMITS[sub?.plan || 'free']
+
         if (!storedDeviceId) {
           // Check device limit before registering
           const currentDeviceCount = await getDeviceCount(user.id)
-          const sub = await getSubscription(user.id)
-          const limits = PLAN_LIMITS[sub?.plan || 'free']
-          if (currentDeviceCount >= limits.maxDevices) {
+          if (currentDeviceCount >= currentPlanLimits.maxDevices) {
             setToast({
-              message: `Device limit reached (${limits.maxDevices}). Upgrade to Pro for unlimited devices.`,
+              message: `Device limit reached (${currentPlanLimits.maxDevices}). Upgrade to Pro for unlimited devices.`,
               onDismiss: () => setToast(null),
             })
             return
@@ -169,10 +172,6 @@ export default function App() {
 
         const { data: tagsData } = await getTags(user.id)
         if (tagsData) setTags(tagsData)
-
-        // Fetch subscription and usage
-        const sub = await getSubscription(user.id)
-        if (sub) setSubscription(sub)
         const [clipCount, deviceCount] = await Promise.all([
           getClipCount(user.id),
           getDeviceCount(user.id),
@@ -336,6 +335,9 @@ export default function App() {
 
       // Show toast and delay actual deletion
       const timeoutId = setTimeout(async () => {
+        if (clipToDelete.image_path) {
+          await deleteClipImage(clipToDelete.image_path)
+        }
         await deleteClip(id)
         setUsage((prev) => ({ ...prev, clips: Math.max(0, prev.clips - 1) }))
         setToast(null)
@@ -434,8 +436,8 @@ export default function App() {
     return (
       <div className="signin-screen">
         <div className="signin-logo">
-          <div className="signin-logo-icon">&#9986;</div>
-          <span className="signin-logo-text">Snip</span>
+          <img className="signin-logo-img" src="app-icon.png" alt="SnipSync" />
+          <span className="signin-logo-text">SnipSync</span>
         </div>
 
         <p className="signin-subtitle">
@@ -474,8 +476,8 @@ export default function App() {
             </button>
           )}
 
-          <div className="titlebar-logo">&#9986;</div>
-          <span className="titlebar-name">Snip</span>
+          <img className="titlebar-logo-img" src="app-icon.png" alt="SnipSync" />
+          <span className="titlebar-name">SnipSync</span>
         </div>
 
         <div className="titlebar-right">

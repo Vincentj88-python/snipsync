@@ -17,9 +17,9 @@ function ImageThumbnail({ imagePath }) {
   useEffect(() => {
     if (!imagePath) return
     const observer = new IntersectionObserver(
-      ([entry]) => {
+      async ([entry]) => {
         if (entry.isIntersecting) {
-          const url = getImageUrl(imagePath)
+          const url = await getImageUrl(imagePath)
           if (url) setSrc(url)
           observer.disconnect()
         }
