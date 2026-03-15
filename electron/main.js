@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, ipcMain, shell, nativeImage, clipboard } = require('electron')
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, clipboard } = require('electron')
 const crypto = require('crypto')
 const path = require('path')
 const os = require('os')
@@ -112,9 +112,15 @@ function createTray() {
 
   tray = new Tray(resizedIcon)
   tray.setToolTip('SnipSync')
-  tray.on('click', () => {
-    toggleWindow()
-  })
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Open SnipSync', click: () => toggleWindow() },
+    { type: 'separator' },
+    { label: 'Quit', click: () => app.quit() },
+  ])
+
+  tray.on('click', () => toggleWindow())
+  tray.on('right-click', () => tray.popUpContextMenu(contextMenu))
 }
 
 // Start a temporary local HTTP server to receive OAuth callback tokens
