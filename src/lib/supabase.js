@@ -57,6 +57,38 @@ export const checkDeviceExists = async (deviceId) => {
   return !!data
 }
 
+// ── Subscription / plan helpers ──────────────────────
+
+export const PLAN_LIMITS = {
+  free: { maxClips: 50, maxDevices: 2, historyDays: 7 },
+  pro:  { maxClips: Infinity, maxDevices: Infinity, historyDays: Infinity },
+}
+
+export const getSubscription = async (userId) => {
+  const { data } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+  return data
+}
+
+export const getClipCount = async (userId) => {
+  const { count } = await supabase
+    .from('clips')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+  return count || 0
+}
+
+export const getDeviceCount = async (userId) => {
+  const { count } = await supabase
+    .from('devices')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+  return count || 0
+}
+
 export const subscribeToClips = (userId, onInsert, onDelete) => {
   const channel = supabase.channel(`clips:${userId}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clips', filter: `user_id=eq.${userId}` },

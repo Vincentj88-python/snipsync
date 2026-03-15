@@ -100,7 +100,7 @@
   );
 
   document.querySelectorAll(
-    '.bento-card, .how-step, .dl-inner, .hero-content, .hero-mockup'
+    '.bento-card, .how-step, .dl-inner, .hero-content, .hero-mockup, .pricing-card'
   ).forEach((el) => observer.observe(el));
 })();
 

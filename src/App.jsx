@@ -12,12 +12,17 @@ import {
   checkDeviceExists,
   subscribeToClips,
   updateDeviceLastSeen,
+  getSubscription,
+  getClipCount,
+  getDeviceCount,
+  PLAN_LIMITS,
 } from './lib/supabase'
 import ClipCard, { PlatformIcon } from './components/ClipCard'
 import InputArea from './components/InputArea'
 import FilterBar from './components/FilterBar'
 import SearchBar from './components/SearchBar'
 import Toast from './components/Toast'
+import SettingsView from './components/SettingsView'
 import { detectType, mapPlatform } from './lib/utils'
 
 export default function App() {
@@ -37,6 +42,9 @@ export default function App() {
   const [removingId, setRemovingId] = useState(null)
   const [toast, setToast] = useState(null)
   const [updateReady, setUpdateReady] = useState(false)
+  const [view, setView] = useState('clips') // 'clips' | 'settings'
+  const [subscription, setSubscription] = useState(null)
+  const [usage, setUsage] = useState({ clips: 0, devices: 0 })
   const unsubRef = useRef(null)
   const handleSendRef = useRef(null)
   const pendingDeleteRef = useRef(null)
@@ -118,6 +126,18 @@ export default function App() {
         }
 
         if (!storedDeviceId) {
+          // Check device limit before registering
+          const currentDeviceCount = await getDeviceCount(user.id)
+          const sub = await getSubscription(user.id)
+          const limits = PLAN_LIMITS[sub?.plan || 'free']
+          if (currentDeviceCount >= limits.maxDevices) {
+            setToast({
+              message: `Device limit reached (${limits.maxDevices}). Upgrade to Pro for unlimited devices.`,
+              onDismiss: () => setToast(null),
+            })
+            return
+          }
+
           const name = deviceName || 'Unknown Device'
           const plat = mapPlatform(platform)
           const { data, error } = await registerDevice(user.id, name, plat)
@@ -135,6 +155,15 @@ export default function App() {
 
         const { data: devicesData } = await getDevices(user.id)
         if (devicesData) setDevices(devicesData)
+
+        // Fetch subscription and usage
+        const sub = await getSubscription(user.id)
+        if (sub) setSubscription(sub)
+        const [clipCount, deviceCount] = await Promise.all([
+          getClipCount(user.id),
+          getDeviceCount(user.id),
+        ])
+        setUsage({ clips: clipCount, devices: deviceCount })
 
         setIsConnected(true)
 
@@ -174,14 +203,28 @@ export default function App() {
   const handleSend = useCallback(async () => {
     const text = input.trim()
     if (!text || !user || !deviceId) return
+
+    // Check clip limit
+    const plan = subscription?.plan || 'free'
+    const limits = PLAN_LIMITS[plan]
+    if (usage.clips >= limits.maxClips) {
+      setToast({
+        message: `Clip limit reached (${limits.maxClips}). Upgrade to Pro for unlimited clips.`,
+        onDismiss: () => setToast(null),
+      })
+      return
+    }
+
     const type = detectType(text)
     setInput('')
     const { error } = await addClip(user.id, deviceId, text, type)
     if (error) {
       setInput(text)
       setToast({ message: error.message, onDismiss: () => setToast(null) })
+    } else {
+      setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
     }
-  }, [input, user, deviceId])
+  }, [input, user, deviceId, subscription, usage])
 
   handleSendRef.current = handleSend
 
@@ -219,6 +262,7 @@ export default function App() {
       // Show toast and delay actual deletion
       const timeoutId = setTimeout(async () => {
         await deleteClip(id)
+        setUsage((prev) => ({ ...prev, clips: Math.max(0, prev.clips - 1) }))
         setToast(null)
       }, 3000)
 
@@ -355,6 +399,15 @@ export default function App() {
             {deviceName}
           </div>
 
+          {/* Settings gear */}
+          <button
+            className={`titlebar-gear ${view === 'settings' ? 'titlebar-gear--active' : ''}`}
+            onClick={() => setView(view === 'settings' ? 'clips' : 'settings')}
+            title="Settings"
+          >
+            &#9881;
+          </button>
+
           {/* Sign-out avatar */}
           <button className="titlebar-avatar" onClick={handleSignOut} title="Sign out">
             {userInitial}
@@ -362,53 +415,77 @@ export default function App() {
         </div>
       </div>
 
-      {/* Input */}
-      <InputArea
-        input={input}
-        setInput={setInput}
-        onSend={handleSend}
-        platform={platform}
-      />
-
-      {/* Filter */}
-      <FilterBar
-        filter={filter}
-        setFilter={setFilter}
-        clips={clips}
-      />
-
-      {/* Search */}
-      <SearchBar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-
-      {/* Clip list */}
-      <div className="clip-list">
-        {filteredClips.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">&#128203;</div>
-            {clips.length === 0
-              ? 'No clips yet. Paste something above!'
-              : searchQuery
-                ? 'No clips match your search.'
-                : `No ${filter} clips found.`
+      {view === 'settings' ? (
+        <SettingsView
+          subscription={subscription}
+          usage={usage}
+          user={user}
+          devices={devices}
+          onUpgrade={() => {
+            const checkoutUrl = import.meta.env.VITE_LS_CHECKOUT_URL
+            if (checkoutUrl) {
+              const url = `${checkoutUrl}?checkout[email]=${encodeURIComponent(user.email)}&checkout[custom][user_id]=${user.id}`
+              if (window.electronAPI) {
+                window.electronAPI.openUrl(url)
+              } else {
+                window.open(url, '_blank')
+              }
+            } else {
+              setToast({ message: 'Upgrade not available yet', onDismiss: () => setToast(null) })
             }
+          }}
+        />
+      ) : (
+        <>
+          {/* Input */}
+          <InputArea
+            input={input}
+            setInput={setInput}
+            onSend={handleSend}
+            platform={platform}
+          />
+
+          {/* Filter */}
+          <FilterBar
+            filter={filter}
+            setFilter={setFilter}
+            clips={clips}
+          />
+
+          {/* Search */}
+          <SearchBar
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+
+          {/* Clip list */}
+          <div className="clip-list">
+            {filteredClips.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">&#128203;</div>
+                {clips.length === 0
+                  ? 'No clips yet. Paste something above!'
+                  : searchQuery
+                    ? 'No clips match your search.'
+                    : `No ${filter} clips found.`
+                }
+              </div>
+            ) : (
+              filteredClips.map((clip) => (
+                <ClipCard
+                  key={clip.id}
+                  clip={clip}
+                  copied={copied}
+                  onCopy={handleCopy}
+                  onDelete={handleDelete}
+                  onOpenUrl={handleOpenUrl}
+                  removing={removingId === clip.id}
+                />
+              ))
+            )}
           </div>
-        ) : (
-          filteredClips.map((clip) => (
-            <ClipCard
-              key={clip.id}
-              clip={clip}
-              copied={copied}
-              onCopy={handleCopy}
-              onDelete={handleDelete}
-              onOpenUrl={handleOpenUrl}
-              removing={removingId === clip.id}
-            />
-          ))
-        )}
-      </div>
+        </>
+      )}
 
       {/* Update banner */}
       {updateReady && (

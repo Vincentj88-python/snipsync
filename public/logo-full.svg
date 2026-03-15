@@ -1,0 +1,71 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="dot-glow">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Full bleed black (kills white corners on JPG export) -->
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <!-- Rounded background -->
+  <rect width="512" height="512" rx="108" fill="#0a0a0a"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.025">
+    <line x1="128" y1="0" x2="128" y2="512" stroke="#fff" stroke-width="0.5"/>
+    <line x1="256" y1="0" x2="256" y2="512" stroke="#fff" stroke-width="0.5"/>
+    <line x1="384" y1="0" x2="384" y2="512" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="128" x2="512" y2="128" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="256" x2="512" y2="256" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="384" x2="512" y2="384" stroke="#fff" stroke-width="0.5"/>
+  </g>
+
+  <!-- Ambient glow behind the curve -->
+  <ellipse cx="256" cy="230" rx="200" ry="100" fill="#22c55e" opacity="0.04"/>
+
+  <!-- S-curve glow layer -->
+  <path d="M 110 230 C 180 230, 170 310, 256 310 C 342 310, 332 150, 402 150"
+    stroke="#22c55e" stroke-width="20" stroke-linecap="round" fill="none" opacity="0.1" filter="url(#glow)"/>
+
+  <!-- S-curve main -->
+  <path d="M 110 230 C 180 230, 170 310, 256 310 C 342 310, 332 150, 402 150"
+    stroke="url(#g1)" stroke-width="6" stroke-linecap="round" fill="none"/>
+
+  <!-- Data particles -->
+  <circle cx="155" cy="240" r="4" fill="#86efac" opacity="0.5"/>
+  <circle cx="210" cy="290" r="3.5" fill="#4ade80" opacity="0.4"/>
+  <circle cx="302" cy="265" r="3.5" fill="#4ade80" opacity="0.4"/>
+  <circle cx="365" cy="165" r="4" fill="#86efac" opacity="0.5"/>
+
+  <!-- Left node -->
+  <circle cx="110" cy="230" r="40" fill="#22c55e" opacity="0.06" filter="url(#dot-glow)"/>
+  <circle cx="110" cy="230" r="30" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.15"/>
+  <circle cx="110" cy="230" r="22" fill="url(#g2)"/>
+  <circle cx="105" cy="225" r="7" fill="#86efac" opacity="0.3"/>
+
+  <!-- Right node -->
+  <circle cx="402" cy="150" r="40" fill="#22c55e" opacity="0.06" filter="url(#dot-glow)"/>
+  <circle cx="402" cy="150" r="30" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.15"/>
+  <circle cx="402" cy="150" r="22" fill="url(#g2)"/>
+  <circle cx="397" cy="145" r="7" fill="#86efac" opacity="0.3"/>
+
+  <!-- SnipSync wordmark -->
+  <text x="256" y="420" text-anchor="middle" font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="64" letter-spacing="-2" fill="#e5e5e5">Snip<tspan fill="#22c55e">Sync</tspan></text>
+
+  <!-- Tagline -->
+  <text x="256" y="456" text-anchor="middle" font-family="'SF Mono', 'Menlo', 'Courier New', monospace" font-weight="400" font-size="16" letter-spacing="4" fill="#444">CLIPBOARD SYNC</text>
+</svg>

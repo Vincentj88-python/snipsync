@@ -1,0 +1,68 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="dot-glow">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Full bleed black -->
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <!-- Rounded background -->
+  <rect width="512" height="512" rx="108" fill="#0a0a0a"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.025">
+    <line x1="128" y1="0" x2="128" y2="512" stroke="#fff" stroke-width="1"/>
+    <line x1="256" y1="0" x2="256" y2="512" stroke="#fff" stroke-width="1"/>
+    <line x1="384" y1="0" x2="384" y2="512" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="128" x2="512" y2="128" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="256" x2="512" y2="256" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="384" x2="512" y2="384" stroke="#fff" stroke-width="1"/>
+  </g>
+
+  <!-- Ambient glow -->
+  <ellipse cx="256" cy="256" rx="180" ry="140" fill="#22c55e" opacity="0.035"/>
+
+  <!-- S-curve (glow) -->
+  <path d="M 140 200 C 220 200, 190 312, 256 312 S 292 200, 372 200"
+    stroke="#22c55e" stroke-width="18" stroke-linecap="round" fill="none" opacity="0.12" filter="url(#glow)"/>
+
+  <!-- S-curve (main) -->
+  <path d="M 140 200 C 220 200, 190 312, 256 312 S 292 200, 372 200"
+    stroke="url(#g1)" stroke-width="7" stroke-linecap="round" fill="none"/>
+
+  <!-- Particles along curve -->
+  <circle cx="180" cy="218" r="5" fill="#86efac" opacity="0.5"/>
+  <circle cx="224" cy="272" r="4" fill="#4ade80" opacity="0.35"/>
+  <circle cx="288" cy="264" r="4.5" fill="#4ade80" opacity="0.4"/>
+  <circle cx="340" cy="212" r="5" fill="#86efac" opacity="0.5"/>
+
+  <!-- Left node -->
+  <circle cx="140" cy="200" r="44" fill="#22c55e" opacity="0.08" filter="url(#dot-glow)"/>
+  <circle cx="140" cy="200" r="34" fill="none" stroke="#22c55e" stroke-width="2" opacity="0.15"/>
+  <circle cx="140" cy="200" r="24" fill="url(#g2)"/>
+  <circle cx="135" cy="195" r="8" fill="#86efac" opacity="0.35"/>
+
+  <!-- Right node -->
+  <circle cx="372" cy="200" r="44" fill="#22c55e" opacity="0.08" filter="url(#dot-glow)"/>
+  <circle cx="372" cy="200" r="34" fill="none" stroke="#22c55e" stroke-width="2" opacity="0.15"/>
+  <circle cx="372" cy="200" r="24" fill="url(#g2)"/>
+  <circle cx="367" cy="195" r="8" fill="#86efac" opacity="0.35"/>
+
+  <!-- Bottom accent line -->
+  <line x1="176" y1="380" x2="336" y2="380" stroke="url(#g1)" stroke-width="3" stroke-linecap="round" opacity="0.2"/>
+</svg>
