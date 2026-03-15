@@ -24,6 +24,17 @@ export const getUser = async () => {
   return user
 }
 
+export const findExistingDevice = async (userId, name, platform) => {
+  const { data } = await supabase
+    .from('devices')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('name', name)
+    .eq('platform', platform)
+    .single()
+  return data
+}
+
 export const registerDevice = (userId, name, platform) =>
   supabase.from('devices').insert({ user_id: userId, name, platform }).select().single()
 

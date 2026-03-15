@@ -4,6 +4,7 @@ import {
   signInWithGoogle,
   signOut,
   getUser,
+  findExistingDevice,
   registerDevice,
   getDevices,
   getClips,
@@ -142,22 +143,31 @@ export default function App() {
         const currentPlanLimits = PLAN_LIMITS[sub?.plan || 'free']
 
         if (!storedDeviceId) {
-          // Check device limit before registering
-          const currentDeviceCount = await getDeviceCount(user.id)
-          if (currentDeviceCount >= currentPlanLimits.maxDevices) {
-            setToast({
-              message: `Device limit reached (${currentPlanLimits.maxDevices}). Upgrade to Pro for unlimited devices.`,
-              onDismiss: () => setToast(null),
-            })
-            return
-          }
-
           const name = deviceName || 'Unknown Device'
           const plat = mapPlatform(platform)
-          const { data, error } = await registerDevice(user.id, name, plat)
-          if (data && !error) {
-            storedDeviceId = data.id
+
+          // Check if this device already exists (e.g., reinstall on same machine)
+          const existingDevice = await findExistingDevice(user.id, name, plat)
+          if (existingDevice) {
+            storedDeviceId = existingDevice.id
             localStorage.setItem('snip_device_id', storedDeviceId)
+            updateDeviceLastSeen(storedDeviceId)
+          } else {
+            // Check device limit before registering a new one
+            const currentDeviceCount = await getDeviceCount(user.id)
+            if (currentDeviceCount >= currentPlanLimits.maxDevices) {
+              setToast({
+                message: `Device limit reached (${currentPlanLimits.maxDevices}). Upgrade to Pro for unlimited devices.`,
+                onDismiss: () => setToast(null),
+              })
+              return
+            }
+
+            const { data, error } = await registerDevice(user.id, name, plat)
+            if (data && !error) {
+              storedDeviceId = data.id
+              localStorage.setItem('snip_device_id', storedDeviceId)
+            }
           }
         } else {
           updateDeviceLastSeen(storedDeviceId)
