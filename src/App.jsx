@@ -4,8 +4,9 @@ import {
   signInWithGoogle,
   signOut,
   getUser,
-  findExistingDevice,
+  findDeviceByMachineId,
   registerDevice,
+  updateDeviceName,
   getDevices,
   getClips,
   addClip,
@@ -43,6 +44,7 @@ export default function App() {
   const [deviceId, setDeviceId] = useState(null)
   const [platform, setPlatform] = useState('darwin')
   const [deviceName, setDeviceName] = useState('')
+  const [machineId, setMachineId] = useState(null)
   const [platformReady, setPlatformReady] = useState(false)
   const [isConnected, setIsConnected] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -69,9 +71,12 @@ export default function App() {
         setPlatform(p)
         const name = await window.electronAPI.getDeviceName()
         setDeviceName(name)
+        const mid = await window.electronAPI.getMachineId()
+        setMachineId(mid)
       } else {
         setPlatform('darwin')
         setDeviceName('Browser')
+        setMachineId('browser-' + Math.random().toString(36).slice(2))
       }
       setPlatformReady(true)
     }
@@ -146,14 +151,15 @@ export default function App() {
           const name = deviceName || 'Unknown Device'
           const plat = mapPlatform(platform)
 
-          // Check if this device already exists (e.g., reinstall on same machine)
-          const existingDevice = await findExistingDevice(user.id, name, plat)
+          // Look up by machine fingerprint — survives reinstalls
+          const existingDevice = await findDeviceByMachineId(user.id, machineId)
           if (existingDevice) {
             storedDeviceId = existingDevice.id
             localStorage.setItem('snip_device_id', storedDeviceId)
-            updateDeviceLastSeen(storedDeviceId)
+            // Update name in case hostname changed
+            updateDeviceName(storedDeviceId, name)
           } else {
-            // Check device limit before registering a new one
+            // Genuinely new device — check limit
             const currentDeviceCount = await getDeviceCount(user.id)
             if (currentDeviceCount >= currentPlanLimits.maxDevices) {
               setToast({
@@ -163,7 +169,7 @@ export default function App() {
               return
             }
 
-            const { data, error } = await registerDevice(user.id, name, plat)
+            const { data, error } = await registerDevice(user.id, name, plat, machineId)
             if (data && !error) {
               storedDeviceId = data.id
               localStorage.setItem('snip_device_id', storedDeviceId)

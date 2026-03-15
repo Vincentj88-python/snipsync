@@ -24,19 +24,22 @@ export const getUser = async () => {
   return user
 }
 
-export const findExistingDevice = async (userId, name, platform) => {
+export const findDeviceByMachineId = async (userId, machineId) => {
+  if (!machineId) return null
   const { data } = await supabase
     .from('devices')
     .select('*')
     .eq('user_id', userId)
-    .eq('name', name)
-    .eq('platform', platform)
+    .eq('machine_id', machineId)
     .single()
   return data
 }
 
-export const registerDevice = (userId, name, platform) =>
-  supabase.from('devices').insert({ user_id: userId, name, platform }).select().single()
+export const registerDevice = (userId, name, platform, machineId) =>
+  supabase.from('devices').insert({ user_id: userId, name, platform, machine_id: machineId }).select().single()
+
+export const updateDeviceName = (deviceId, name) =>
+  supabase.from('devices').update({ name, last_seen_at: new Date().toISOString() }).eq('id', deviceId)
 
 export const getDevices = (userId) =>
   supabase.from('devices').select('*').eq('user_id', userId).order('last_seen_at', { ascending: false })

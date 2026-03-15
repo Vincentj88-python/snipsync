@@ -206,6 +206,20 @@ function registerIpcHandlers() {
     return os.hostname()
   })
 
+  ipcMain.handle('get-machine-id', () => {
+    // Generate a stable machine fingerprint from hardware characteristics
+    // This survives app reinstalls, unlike localStorage
+    const parts = [
+      os.hostname(),
+      os.platform(),
+      os.arch(),
+      os.cpus()[0]?.model || '',
+      os.totalmem().toString(),
+      os.homedir(),
+    ]
+    return crypto.createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 32)
+  })
+
   ipcMain.handle('open-url', (_event, url) => {
     // Validate URL — only allow http: and https: protocols
     try {

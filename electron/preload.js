@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('electronAPI', {
   getPlatform: () => ipcRenderer.invoke('get-platform'),
   getDeviceName: () => ipcRenderer.invoke('get-device-name'),
+  getMachineId: () => ipcRenderer.invoke('get-machine-id'),
   openUrl: (url) => ipcRenderer.invoke('open-url', url),
   startOAuth: (url) => ipcRenderer.invoke('start-oauth', url),
   hideWindow: () => ipcRenderer.invoke('hide-window'),
