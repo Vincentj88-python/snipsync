@@ -41,6 +41,22 @@ export const registerDevice = (userId, name, platform, machineId) =>
 export const updateDeviceName = (deviceId, name) =>
   supabase.from('devices').update({ name, last_seen_at: new Date().toISOString() }).eq('id', deviceId)
 
+export const findDeviceByName = async (userId, name, platform) => {
+  const { data } = await supabase
+    .from('devices')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('name', name)
+    .eq('platform', platform)
+    .is('machine_id', null)
+    .limit(1)
+    .single()
+  return data
+}
+
+export const backfillMachineId = (deviceId, machineId) =>
+  supabase.from('devices').update({ machine_id: machineId, last_seen_at: new Date().toISOString() }).eq('id', deviceId)
+
 export const getDevices = (userId) =>
   supabase.from('devices').select('*').eq('user_id', userId).order('last_seen_at', { ascending: false })
 

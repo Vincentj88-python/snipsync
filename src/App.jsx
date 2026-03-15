@@ -5,6 +5,8 @@ import {
   signOut,
   getUser,
   findDeviceByMachineId,
+  findDeviceByName,
+  backfillMachineId,
   registerDevice,
   updateDeviceName,
   getDevices,
@@ -151,12 +153,22 @@ export default function App() {
           const name = deviceName || 'Unknown Device'
           const plat = mapPlatform(platform)
 
-          // Look up by machine fingerprint — survives reinstalls
-          const existingDevice = await findDeviceByMachineId(user.id, machineId)
+          // 1. Look up by machine fingerprint — survives reinstalls
+          let existingDevice = await findDeviceByMachineId(user.id, machineId)
+
+          // 2. Fallback: match legacy device by name+platform (no machine_id yet)
+          if (!existingDevice) {
+            const legacyDevice = await findDeviceByName(user.id, name, plat)
+            if (legacyDevice) {
+              // Backfill machine_id on the legacy device
+              await backfillMachineId(legacyDevice.id, machineId)
+              existingDevice = legacyDevice
+            }
+          }
+
           if (existingDevice) {
             storedDeviceId = existingDevice.id
             localStorage.setItem('snip_device_id', storedDeviceId)
-            // Update name in case hostname changed
             updateDeviceName(storedDeviceId, name)
           } else {
             // Genuinely new device — check limit
