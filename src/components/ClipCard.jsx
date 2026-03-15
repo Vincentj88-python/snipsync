@@ -1,11 +1,44 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { getImageUrl } from '../lib/supabase'
 
 const TYPE_STYLES = {
   link:    { bg: '#1a2e1a', text: '#4ade80', dot: '#22c55e' },
   note:    { bg: '#1e1e2e', text: '#a78bfa', dot: '#8b5cf6' },
   address: { bg: '#2e1a1a', text: '#f87171', dot: '#ef4444' },
   code:    { bg: '#1a1e2e', text: '#60a5fa', dot: '#3b82f6' },
+  image:   { bg: '#2e2e1a', text: '#facc15', dot: '#eab308' },
   other:   { bg: '#1e1e1e', text: '#9ca3af', dot: '#6b7280' },
+}
+
+function ImageThumbnail({ imagePath }) {
+  const [src, setSrc] = useState(null)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!imagePath) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          const url = getImageUrl(imagePath)
+          if (url) setSrc(url)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [imagePath])
+
+  return (
+    <div ref={ref} className="clip-image-wrapper">
+      {src ? (
+        <img src={src} alt="Clip image" className="clip-image" loading="lazy" />
+      ) : (
+        <div className="clip-image-placeholder">Loading...</div>
+      )}
+    </div>
+  )
 }
 
 function PlatformIcon({ platform, size = 12, color = '#555' }) {
@@ -38,11 +71,12 @@ function timeAgo(timestamp) {
   return `${Math.floor(diff / 86400000)}d ago`
 }
 
-export default function ClipCard({ clip, copied, onCopy, onDelete, onOpenUrl, removing }) {
+export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpenUrl, removing }) {
   const typeStyle = TYPE_STYLES[clip.type] || TYPE_STYLES.other
   const isCopied = copied === clip.id
   const isLink = clip.type === 'link'
   const isCode = clip.type === 'code'
+  const isImage = clip.type === 'image'
   const deviceName = clip.devices?.name || 'Unknown'
   const devicePlatform = clip.devices?.platform || 'mac'
 
@@ -60,6 +94,10 @@ export default function ClipCard({ clip, copied, onCopy, onDelete, onOpenUrl, re
           {clip.type}
         </span>
 
+        {clip.pinned && (
+          <span className="clip-pin-indicator" title="Pinned">&#128204;</span>
+        )}
+
         <span className="clip-time">{timeAgo(clip.created_at)}</span>
 
         <span className="clip-device-badge">
@@ -69,11 +107,15 @@ export default function ClipCard({ clip, copied, onCopy, onDelete, onOpenUrl, re
       </div>
 
       {/* Content */}
-      <div className="clip-content-wrapper">
-        <div className={`clip-content ${isLink ? 'clip-content--link' : 'clip-content--text'} ${isCode ? 'clip-content--code' : ''}`}>
-          {clip.content}
+      {isImage && clip.image_path ? (
+        <ImageThumbnail imagePath={clip.image_path} />
+      ) : (
+        <div className="clip-content-wrapper">
+          <div className={`clip-content ${isLink ? 'clip-content--link' : 'clip-content--text'} ${isCode ? 'clip-content--code' : ''}`}>
+            {clip.content}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Actions */}
       <div className="clip-actions">
@@ -82,6 +124,13 @@ export default function ClipCard({ clip, copied, onCopy, onDelete, onOpenUrl, re
           className={`clip-btn clip-btn--copy ${isCopied ? 'clip-btn--copied' : ''}`}
         >
           {isCopied ? '\u2713 Copied!' : 'Copy'}
+        </button>
+
+        <button
+          onClick={() => onPin(clip.id, !clip.pinned)}
+          className={`clip-btn clip-btn--pin ${clip.pinned ? 'clip-btn--pinned' : ''}`}
+        >
+          {clip.pinned ? 'Unpin' : 'Pin'}
         </button>
 
         {isLink && (

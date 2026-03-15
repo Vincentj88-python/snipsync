@@ -23,4 +23,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeListener('update-status', handler)
   },
   installUpdate: () => ipcRenderer.invoke('install-update'),
+  startClipboardWatch: () => ipcRenderer.invoke('start-clipboard-watch'),
+  stopClipboardWatch: () => ipcRenderer.invoke('stop-clipboard-watch'),
+  onClipboardChange: (callback) => {
+    const handler = (_event, text) => callback(text)
+    ipcRenderer.on('clipboard-change', handler)
+    return handler
+  },
+  removeClipboardChangeListener: (handler) => {
+    ipcRenderer.removeListener('clipboard-change', handler)
+  },
 })

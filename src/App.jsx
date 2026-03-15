@@ -9,6 +9,7 @@ import {
   getClips,
   addClip,
   deleteClip,
+  togglePinClip,
   checkDeviceExists,
   subscribeToClips,
   updateDeviceLastSeen,
@@ -16,6 +17,11 @@ import {
   getClipCount,
   getDeviceCount,
   PLAN_LIMITS,
+  getTags,
+  uploadClipImage,
+  addImageClip,
+  deleteClipImage,
+  getImageUrl,
 } from './lib/supabase'
 import ClipCard, { PlatformIcon } from './components/ClipCard'
 import InputArea from './components/InputArea'
@@ -42,12 +48,17 @@ export default function App() {
   const [removingId, setRemovingId] = useState(null)
   const [toast, setToast] = useState(null)
   const [updateReady, setUpdateReady] = useState(false)
+  const [tags, setTags] = useState([])
   const [view, setView] = useState('clips') // 'clips' | 'settings'
   const [subscription, setSubscription] = useState(null)
   const [usage, setUsage] = useState({ clips: 0, devices: 0 })
+  const [autoCapture, setAutoCapture] = useState(() => {
+    return localStorage.getItem('snip_auto_capture') === 'true'
+  })
   const unsubRef = useRef(null)
   const handleSendRef = useRef(null)
   const pendingDeleteRef = useRef(null)
+  const autoCaptureRef = useRef({ user: null, deviceId: null, subscription: null, usage: null })
 
   // Initialize platform info
   useEffect(() => {
@@ -156,6 +167,9 @@ export default function App() {
         const { data: devicesData } = await getDevices(user.id)
         if (devicesData) setDevices(devicesData)
 
+        const { data: tagsData } = await getTags(user.id)
+        if (tagsData) setTags(tagsData)
+
         // Fetch subscription and usage
         const sub = await getSubscription(user.id)
         if (sub) setSubscription(sub)
@@ -240,6 +254,67 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [platform])
 
+  // ── Clipboard auto-capture ──────────────────────────
+  // Keep a ref with latest values so the listener doesn't go stale
+  autoCaptureRef.current = { user, deviceId, subscription, usage }
+
+  useEffect(() => {
+    if (!autoCapture || !window.electronAPI?.startClipboardWatch) return
+
+    window.electronAPI.startClipboardWatch()
+
+    const handler = window.electronAPI.onClipboardChange(async (text) => {
+      const { user: u, deviceId: d, subscription: sub, usage: usg } = autoCaptureRef.current
+      if (!u || !d || !text) return
+
+      // Check clip limit
+      const plan = sub?.plan || 'free'
+      const limits = PLAN_LIMITS[plan]
+      if (usg && usg.clips >= limits.maxClips) return
+
+      const type = detectType(text)
+      const { error } = await addClip(u.id, d, text, type)
+      if (!error) {
+        setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
+      }
+    })
+
+    return () => {
+      window.electronAPI.stopClipboardWatch()
+      window.electronAPI.removeClipboardChangeListener(handler)
+    }
+  }, [autoCapture])
+
+  const handleToggleAutoCapture = useCallback((enabled) => {
+    setAutoCapture(enabled)
+    localStorage.setItem('snip_auto_capture', String(enabled))
+  }, [])
+
+  const handleImagePaste = useCallback(async (file) => {
+    if (!user || !deviceId) return
+    const plan = subscription?.plan || 'free'
+    if (plan === 'free') {
+      setToast({ message: 'Image clips are a Pro feature. Upgrade to upload images.', onDismiss: () => setToast(null) })
+      return
+    }
+    const limits = PLAN_LIMITS[plan]
+    if (usage.clips >= limits.maxClips) {
+      setToast({ message: `Clip limit reached (${limits.maxClips}).`, onDismiss: () => setToast(null) })
+      return
+    }
+    const { data: uploadData, error: uploadError } = await uploadClipImage(user.id, file)
+    if (uploadError) {
+      setToast({ message: uploadError.message, onDismiss: () => setToast(null) })
+      return
+    }
+    const { error } = await addImageClip(user.id, deviceId, uploadData.path, file.size)
+    if (error) {
+      setToast({ message: 'Failed to save image clip', onDismiss: () => setToast(null) })
+    } else {
+      setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
+    }
+  }, [user, deviceId, subscription, usage])
+
   const handleCopy = useCallback((clip) => {
     navigator.clipboard.writeText(clip.content)
     setCopied(clip.id)
@@ -292,6 +367,13 @@ export default function App() {
     }, 200)
   }, [clips])
 
+  const handlePin = useCallback(async (id, pinned) => {
+    const { data, error } = await togglePinClip(id, pinned)
+    if (data && !error) {
+      setClips((prev) => prev.map((c) => (c.id === id ? data : c)))
+    }
+  }, [])
+
   const handleOpenUrl = useCallback((url) => {
     if (window.electronAPI) {
       window.electronAPI.openUrl(url)
@@ -317,9 +399,19 @@ export default function App() {
     }
   }, [])
 
-  // Filter clips by type then by search query
-  const filteredClips = clips
-    .filter((c) => filter === 'all' || c.type === filter)
+  // Sort pinned first, then by created_at; then filter by type and search
+  const filteredClips = [...clips]
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      return new Date(b.created_at) - new Date(a.created_at)
+    })
+    // TODO: implement tag filtering once clip_tags are loaded with clips
+    .filter((c) => {
+      if (filter === 'all') return true
+      if (filter.startsWith('tag:')) return true // tag filtering placeholder
+      return c.type === filter
+    })
     .filter((c) => {
       if (!searchQuery) return true
       return c.content.toLowerCase().includes(searchQuery.toLowerCase())
@@ -421,6 +513,9 @@ export default function App() {
           usage={usage}
           user={user}
           devices={devices}
+          clips={clips}
+          autoCapture={autoCapture}
+          onToggleAutoCapture={handleToggleAutoCapture}
           onUpgrade={() => {
             const checkoutUrl = import.meta.env.VITE_LS_CHECKOUT_URL
             if (checkoutUrl) {
@@ -442,6 +537,7 @@ export default function App() {
             input={input}
             setInput={setInput}
             onSend={handleSend}
+            onImagePaste={handleImagePaste}
             platform={platform}
           />
 
@@ -450,6 +546,7 @@ export default function App() {
             filter={filter}
             setFilter={setFilter}
             clips={clips}
+            tags={tags}
           />
 
           {/* Search */}
@@ -477,6 +574,7 @@ export default function App() {
                   clip={clip}
                   copied={copied}
                   onCopy={handleCopy}
+                  onPin={handlePin}
                   onDelete={handleDelete}
                   onOpenUrl={handleOpenUrl}
                   removing={removingId === clip.id}

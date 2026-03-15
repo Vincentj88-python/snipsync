@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Tray, ipcMain, shell, nativeImage } = require('electron')
+const { app, BrowserWindow, Tray, ipcMain, shell, nativeImage, clipboard } = require('electron')
+const crypto = require('crypto')
 const path = require('path')
 const os = require('os')
 const http = require('http')
@@ -7,6 +8,8 @@ const Sentry = require('@sentry/electron')
 
 let tray = null
 let mainWindow = null
+let clipboardWatcher = null
+let lastClipboardHash = ''
 
 const isDev = !app.isPackaged
 const OAUTH_PORT = 54321
@@ -225,6 +228,34 @@ function registerIpcHandlers() {
 
   ipcMain.handle('install-update', () => {
     autoUpdater.quitAndInstall(false, true)
+  })
+
+  // ── Clipboard auto-capture ──────────────────────────
+  ipcMain.handle('start-clipboard-watch', () => {
+    if (clipboardWatcher) return
+    // Seed with current clipboard content so we don't immediately capture it
+    const current = clipboard.readText()
+    if (current) {
+      lastClipboardHash = crypto.createHash('md5').update(current).digest('hex')
+    }
+    clipboardWatcher = setInterval(() => {
+      const text = clipboard.readText()
+      if (!text || text.length > 10000) return
+      const hash = crypto.createHash('md5').update(text).digest('hex')
+      if (hash !== lastClipboardHash) {
+        lastClipboardHash = hash
+        if (mainWindow) {
+          mainWindow.webContents.send('clipboard-change', text)
+        }
+      }
+    }, 1500)
+  })
+
+  ipcMain.handle('stop-clipboard-watch', () => {
+    if (clipboardWatcher) {
+      clearInterval(clipboardWatcher)
+      clipboardWatcher = null
+    }
   })
 }
 

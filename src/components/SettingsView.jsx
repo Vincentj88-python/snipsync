@@ -1,7 +1,27 @@
 import React from 'react'
 import { PLAN_LIMITS } from '../lib/supabase'
 
-export default function SettingsView({ subscription, usage, user, devices, onUpgrade }) {
+function escapeCsvField(value) {
+  const str = String(value ?? '')
+  if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+    return '"' + str.replace(/"/g, '""') + '"'
+  }
+  return str
+}
+
+function triggerDownload(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+export default function SettingsView({ subscription, usage, user, devices, clips, autoCapture, onToggleAutoCapture, onUpgrade }) {
   const plan = subscription?.plan || 'free'
   const limits = PLAN_LIMITS[plan]
   const isPro = plan === 'pro'
@@ -101,6 +121,65 @@ export default function SettingsView({ subscription, usage, user, devices, onUpg
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* Auto-capture toggle */}
+      <div className="settings-section">
+        <h3 className="settings-section-title">Clipboard auto-capture</h3>
+        <div className="settings-toggle-row">
+          <div className="settings-toggle-info">
+            <span className="settings-toggle-label">Auto-save clipboard changes</span>
+            <span className="settings-toggle-desc">
+              Automatically saves new clipboard content as clips. Checks every 1.5 seconds.
+            </span>
+          </div>
+          <button
+            className={`settings-toggle ${autoCapture ? 'settings-toggle--on' : ''}`}
+            onClick={() => onToggleAutoCapture(!autoCapture)}
+          >
+            <span className="settings-toggle-knob" />
+          </button>
+        </div>
+      </div>
+
+      {/* Export */}
+      <div className="settings-section settings-export">
+        <h3 className="settings-section-title">Export</h3>
+        <div className="settings-export-actions">
+          <button
+            className="settings-export-btn"
+            onClick={() => {
+              const headers = 'content,type,device,created_at,pinned'
+              const rows = (clips || []).map((c) =>
+                [
+                  escapeCsvField(c.content),
+                  escapeCsvField(c.type),
+                  escapeCsvField(c.devices?.name || 'Unknown'),
+                  escapeCsvField(c.created_at),
+                  escapeCsvField(c.pinned ? 'true' : 'false'),
+                ].join(',')
+              )
+              triggerDownload([headers, ...rows].join('\n'), 'snip-clips.csv', 'text/csv')
+            }}
+          >
+            Export CSV
+          </button>
+          <button
+            className="settings-export-btn"
+            onClick={() => {
+              const data = (clips || []).map((c) => ({
+                content: c.content,
+                type: c.type,
+                device: c.devices?.name || 'Unknown',
+                created_at: c.created_at,
+                pinned: !!c.pinned,
+              }))
+              triggerDownload(JSON.stringify(data, null, 2), 'snip-clips.json', 'application/json')
+            }}
+          >
+            Export JSON
+          </button>
         </div>
       </div>
 
