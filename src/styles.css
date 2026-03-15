@@ -1,0 +1,892 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0a0a0a;
+  color: #e5e5e5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+/* ========================================
+   KEYFRAMES
+   ======================================== */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes clipIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes clipOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+@keyframes checkPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ========================================
+   LOADING SCREEN
+   ======================================== */
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #0a0a0a;
+  color: #555;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #222;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ========================================
+   SIGN-IN SCREEN
+   ======================================== */
+
+.signin-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: radial-gradient(ellipse at center, #0f1a0f 0%, #0a0a0a 70%);
+  gap: 20px;
+}
+
+.signin-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeInUp 500ms ease forwards;
+  opacity: 0;
+}
+
+.signin-logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.signin-logo-text {
+  font-size: 22px;
+  font-weight: 600;
+  color: #e5e5e5;
+  letter-spacing: -0.02em;
+}
+
+.signin-subtitle {
+  font-size: 13px;
+  color: #555;
+  text-align: center;
+  animation: fadeInUp 500ms ease forwards;
+  animation-delay: 100ms;
+  opacity: 0;
+}
+
+.signin-btn {
+  background: #1a1a1a;
+  color: #e5e5e5;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 150ms ease;
+  animation: fadeInUp 500ms ease forwards;
+  animation-delay: 200ms;
+  opacity: 0;
+}
+
+.signin-btn:hover {
+  background: #222;
+  border-color: #444;
+}
+
+.signin-btn:active {
+  transform: scale(0.97);
+}
+
+/* ========================================
+   TITLEBAR
+   ======================================== */
+
+.titlebar {
+  background: #0a0a0a;
+  border-bottom: 1px solid #1e1e1e;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  -webkit-app-region: drag;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-traffic-lights {
+  display: flex;
+  gap: 6px;
+  margin-right: 2px;
+}
+
+.titlebar-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.titlebar-dot--close { background: #ff5f57; }
+.titlebar-dot--minimize { background: #ffbd2e; }
+.titlebar-dot--maximize { background: #28c840; }
+
+.titlebar-close-btn {
+  background: transparent;
+  color: #555;
+  border: none;
+  font-size: 14px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 150ms ease;
+  margin-right: 2px;
+}
+
+.titlebar-close-btn:hover {
+  background: #1e1e1e;
+  color: #e5e5e5;
+}
+
+.titlebar-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.titlebar-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e5e5;
+  letter-spacing: -0.02em;
+}
+
+.titlebar-live {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.titlebar-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.titlebar-live-dot--on {
+  background: #22c55e;
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.titlebar-live-dot--off {
+  background: #666;
+}
+
+.titlebar-live-label {
+  font-size: 10px;
+  color: #444;
+  letter-spacing: 0.03em;
+}
+
+.titlebar-device-badge {
+  background: #161616;
+  border: 1px solid #222;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.titlebar-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+}
+
+.titlebar-avatar:hover {
+  background: #2a1515;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* ========================================
+   INPUT AREA
+   ======================================== */
+
+.input-area {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.input-wrapper {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 150ms ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: #333;
+}
+
+.input-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 11px 13px;
+  font-size: 13px;
+  color: #d1d5db;
+  resize: none;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.5;
+  display: block;
+}
+
+.input-toolbar {
+  border-top: 1px solid #1a1a1a;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.input-shortcut {
+  font-size: 10px;
+  color: #333;
+}
+
+.input-send-btn {
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  border: none;
+  transition: all 150ms ease;
+}
+
+.input-send-btn--active {
+  background: #22c55e;
+  color: #000;
+  font-weight: 600;
+}
+
+.input-send-btn--inactive {
+  background: #1a1a1a;
+  color: #333;
+  font-weight: 400;
+}
+
+.input-send-btn:hover {
+  filter: brightness(1.1);
+}
+
+.input-send-btn:active {
+  transform: scale(0.96);
+}
+
+/* ========================================
+   FILTER BAR
+   ======================================== */
+
+.filter-bar {
+  padding: 8px 14px;
+  border-bottom: 1px solid #1e1e1e;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.filter-btn {
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: all 150ms ease;
+}
+
+.filter-btn--active {
+  background: #1e1e1e;
+  color: #e5e5e5;
+  border: 1px solid #2e2e2e;
+}
+
+.filter-btn--inactive {
+  background: transparent;
+  color: #555;
+  border: 1px solid transparent;
+}
+
+.filter-btn--inactive:hover {
+  color: #888;
+  background: #141414;
+}
+
+.filter-count {
+  color: #444;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+/* ========================================
+   SEARCH BAR
+   ======================================== */
+
+.search-bar {
+  padding: 0 14px;
+  border-bottom: 1px solid #1e1e1e;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  transition: all 200ms ease;
+}
+
+.search-bar--collapsed {
+  height: 36px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.search-bar--expanded {
+  height: 36px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.search-toggle {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 14px;
+  width: 28px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.search-toggle:hover {
+  color: #888;
+  background: #1a1a1a;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #d1d5db;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.search-input::placeholder {
+  color: #444;
+}
+
+.search-clear {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+}
+
+.search-clear:hover {
+  color: #888;
+  background: #1a1a1a;
+}
+
+/* ========================================
+   CLIP CARD
+   ======================================== */
+
+.clip-card {
+  background: #111111;
+  border: 1px solid #222;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: all 150ms ease;
+  animation: clipIn 250ms ease forwards;
+}
+
+.clip-card:hover {
+  border-color: #333;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.04);
+}
+
+.clip-card--removing {
+  animation: clipOut 200ms ease forwards;
+}
+
+.clip-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.clip-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.clip-type-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.clip-time {
+  font-size: 10px;
+  color: #444;
+  flex: 1;
+}
+
+.clip-device-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #555;
+}
+
+.clip-content-wrapper {
+  position: relative;
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.clip-content-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, #111111);
+  pointer-events: none;
+}
+
+.clip-content {
+  font-size: 13px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.clip-content--text {
+  color: #d1d5db;
+}
+
+.clip-content--link {
+  color: #60a5fa;
+}
+
+.clip-content--code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'DM Mono', monospace;
+}
+
+.clip-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.clip-btn {
+  background: #1a1a1a;
+  color: #888;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 150ms ease;
+}
+
+.clip-btn:hover {
+  filter: brightness(1.2);
+  transform: scale(1.02);
+}
+
+.clip-btn:active {
+  transform: scale(0.97);
+}
+
+.clip-btn--copy {
+  flex: 1;
+}
+
+.clip-btn--copied {
+  background: #1a3a1a;
+  color: #4ade80;
+  border-color: #2d5a2d;
+  animation: checkPop 300ms ease;
+}
+
+.clip-btn--delete {
+  color: #555;
+  padding: 5px 8px;
+}
+
+.clip-btn--delete:hover {
+  color: #ef4444;
+  border-color: #3a1a1a;
+  background: #1a1212;
+}
+
+/* ========================================
+   CLIP LIST
+   ======================================== */
+
+.clip-list {
+  flex: 1;
+  padding: 10px 14px;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+  text-align: center;
+  color: #444;
+  font-size: 12px;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-state-icon {
+  font-size: 24px;
+  opacity: 0.3;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+
+.footer {
+  border-top: 1px solid #1e1e1e;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.footer-devices {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-device {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.footer-device--online {
+  color: #555;
+}
+
+.footer-device--offline {
+  color: #333;
+}
+
+.footer-device-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.footer-device-dot--online {
+  background: #22c55e;
+}
+
+.footer-device-dot--offline {
+  background: #333;
+}
+
+.footer-count {
+  font-size: 10px;
+  color: #555;
+}
+
+/* ========================================
+   TOAST
+   ======================================== */
+
+.toast {
+  position: fixed;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
+  z-index: 100;
+  animation: toastIn 200ms ease forwards;
+}
+
+.toast--leaving {
+  animation: toastOut 200ms ease forwards;
+}
+
+.toast-undo {
+  background: transparent;
+  border: none;
+  color: #22c55e;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 150ms ease;
+}
+
+.toast-undo:hover {
+  background: #1a2e1a;
+}
+
+/* ========================================
+   APP CONTAINER
+   ======================================== */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0a0a0a;
+}
+
+/* ========================================
+   UPDATE BANNER
+   ======================================== */
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: #1a2e1a;
+  border-top: 1px solid #2d5a2d;
+  font-size: 11px;
+  color: #4ade80;
+  flex-shrink: 0;
+}
+
+.update-btn {
+  background: #22c55e;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.update-btn:hover {
+  background: #16a34a;
+}

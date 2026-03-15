@@ -1,0 +1,148 @@
+/* ========================================
+   LEGAL PAGES — Privacy & Terms
+   ======================================== */
+
+.legal {
+  position: relative;
+  z-index: 2;
+  padding: 120px 32px 80px;
+}
+
+.legal-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.legal-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 12px;
+}
+
+.legal-h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+.legal-updated {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 48px;
+  font-family: 'DM Mono', monospace;
+}
+
+.legal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.legal-body section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legal-body h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #e5e5e5;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.legal-body h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ccc;
+  margin-top: 4px;
+}
+
+.legal-body p {
+  font-size: 14px;
+  color: #999;
+  line-height: 1.75;
+}
+
+.legal-body a {
+  color: #22c55e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 200ms;
+}
+.legal-body a:hover {
+  color: #4ade80;
+}
+
+.legal-body ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legal-body ul li {
+  font-size: 14px;
+  color: #999;
+  line-height: 1.65;
+  padding-left: 20px;
+  position: relative;
+}
+
+.legal-body ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(34,197,94,0.4);
+}
+
+.legal-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.legal-body thead th {
+  text-align: left;
+  font-weight: 600;
+  color: #888;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.legal-body tbody td {
+  padding: 10px 12px;
+  color: #999;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.legal-body tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.legal-contact {
+  font-family: 'DM Mono', monospace;
+  color: #22c55e !important;
+  font-size: 15px !important;
+}
+
+/* No canvas on legal pages */
+body:has(.legal) #waves-canvas,
+body:has(.legal) .grain {
+  display: none;
+}

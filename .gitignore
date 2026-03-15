@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+.env
+.env.*
+*.dmg
+*.exe
+.DS_Store
