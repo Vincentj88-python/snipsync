@@ -18,7 +18,7 @@ One-line vision: the fastest way to move information between devices and people.
 ### Free
 
 - 2 devices
-- 50 clips max
+- 30 clips max
 - 7-day history
 - Text clips only
 

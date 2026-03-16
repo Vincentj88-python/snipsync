@@ -65,7 +65,7 @@ export const updateDeviceLastSeen = (deviceId) =>
 
 export const getClips = (userId, limit = 50) =>
   supabase.from('clips')
-    .select('*, devices(name, platform)')
+    .select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -76,14 +76,14 @@ export const addClip = (userId, deviceId, content, type) => {
   if (content.length > MAX_CLIP_LENGTH) {
     return { data: null, error: { message: `Clip too long (max ${MAX_CLIP_LENGTH} characters)` } }
   }
-  return supabase.from('clips').insert({ user_id: userId, device_id: deviceId, content, type }).select('*, devices(name, platform)').single()
+  return supabase.from('clips').insert({ user_id: userId, device_id: deviceId, content, type }).select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))').single()
 }
 
 export const deleteClip = (id) =>
   supabase.from('clips').delete().eq('id', id)
 
 export const togglePinClip = (id, pinned) =>
-  supabase.from('clips').update({ pinned }).eq('id', id).select('*, devices(name, platform)').single()
+  supabase.from('clips').update({ pinned }).eq('id', id).select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))').single()
 
 export const checkDeviceExists = async (deviceId) => {
   const { data } = await supabase.from('devices').select('id').eq('id', deviceId).single()
@@ -164,7 +164,7 @@ export const addImageClip = async (userId, deviceId, imagePath, imageSize) => {
     type: 'image',
     image_path: imagePath,
     image_size: imageSize,
-  }).select('*, devices(name, platform)').single()
+  }).select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))').single()
 }
 
 export const deleteClipImage = async (imagePath) => {

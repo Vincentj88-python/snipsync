@@ -216,7 +216,7 @@ export default function App() {
           async (newClip) => {
             const { data } = await supabase
               .from('clips')
-              .select('*, devices(name, platform)')
+              .select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))')
               .eq('id', newClip.id)
               .single()
             if (data) {
@@ -453,10 +453,12 @@ export default function App() {
       if (!a.pinned && b.pinned) return 1
       return new Date(b.created_at) - new Date(a.created_at)
     })
-    // TODO: implement tag filtering once clip_tags are loaded with clips
     .filter((c) => {
       if (filter === 'all') return true
-      if (filter.startsWith('tag:')) return true // tag filtering placeholder
+      if (filter.startsWith('tag:')) {
+        const tagName = filter.slice(4)
+        return c.clip_tags?.some((ct) => ct.tags?.name === tagName)
+      }
       return c.type === filter
     })
     .filter((c) => {
