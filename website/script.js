@@ -197,7 +197,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
   if (!form) return;
 
   const SUPABASE_URL = 'https://kohwpkwcopkslbtkczag.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvaHdwa3djb3Brc2xidGtjemFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MDY0NTAsImV4cCI6MjA1NzE4MjQ1MH0.a2BPKHO8KDLmSfT4cIqBxy3zvCXXwm5cMDRyBhmCEkI';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvaHdwa3djb3Brc2xidGtjemFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzkyNTAsImV4cCI6MjA4ODcxNTI1MH0.PrsQDtXSa8Y8vy-JgIfBk3l0iVtmedHPqr72fzhwd7k';
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
