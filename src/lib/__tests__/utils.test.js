@@ -7,8 +7,14 @@ describe('detectType', () => {
     expect(detectType('http://foo.bar/baz?q=1')).toBe('link')
   })
 
+  it('returns "link" for www URLs without protocol', () => {
+    expect(detectType('www.snipsync.xyz')).toBe('link')
+    expect(detectType('www.google.com/search?q=test')).toBe('link')
+  })
+
   it('returns "link" for URLs regardless of case', () => {
     expect(detectType('HTTPS://EXAMPLE.COM')).toBe('link')
+    expect(detectType('WWW.EXAMPLE.COM')).toBe('link')
   })
 
   it('returns "address" for street address patterns', () => {
