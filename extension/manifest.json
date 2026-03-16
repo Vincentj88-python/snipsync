@@ -5,8 +5,10 @@
   "description": "Clipboard sync across all your devices. Copy here, paste there.",
   "permissions": [
     "storage",
+    "identity",
     "contextMenus",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
     "https://kohwpkwcopkslbtkczag.supabase.co/*"
