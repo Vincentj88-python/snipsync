@@ -293,6 +293,39 @@ Tasks:
 - Customer portal: Lemon Squeezy provides a hosted portal for users to manage their subscription
 - Status: Awaiting Lemon Squeezy account approval
 
+## Infrastructure Capacity
+
+### Current: Supabase Free Plan
+
+| Resource | Limit | Practical meaning |
+|----------|-------|-------------------|
+| Realtime connections | **200 concurrent** | **Primary bottleneck** — 200 users with app open at once |
+| Database size | 500 MB | ~500,000 text clips |
+| Storage | 1 GB | ~200 image clips (5MB each) |
+| Auth users | 50,000 | Plenty |
+| Bandwidth | 5 GB/month | ~5,000 app sessions |
+| Edge Function invocations | 500,000/month | Plenty for webhooks |
+| Auto-pause | After 1 week inactive | **Will kill the app if no activity** |
+
+### Scaling Triggers
+
+| User count | Action needed | Cost |
+|------------|---------------|------|
+| 0-50 | Free plan is fine | $0 |
+| 50+ | **Upgrade to Supabase Pro** — no auto-pause, 500 Realtime connections, 8GB DB, 100GB bandwidth | $25/mo |
+| 500+ | Supabase Team — unlimited connections, 100GB DB, 250GB bandwidth | $599/mo |
+
+### Break-even
+
+- Supabase Pro costs $25/mo
+- SnipSync Pro is $3.99/mo per user
+- **7 paying users covers infrastructure costs**
+- Everything after that is profit (~95% margins)
+
+### Key risk: Auto-pause
+
+On the free plan, Supabase pauses the project after 1 week of no API calls. All users would see the app go dead. **Upgrade to Pro before any public launch.**
+
 ## Current Status (as of March 2026)
 
 ### What's live
