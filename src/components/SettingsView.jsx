@@ -21,7 +21,7 @@ function triggerDownload(content, filename, mimeType) {
   URL.revokeObjectURL(url)
 }
 
-export default function SettingsView({ subscription, usage, user, devices, clips, autoCapture, onToggleAutoCapture, onUpgrade }) {
+export default function SettingsView({ subscription, usage, user, devices, clips, autoCapture, onToggleAutoCapture, openAtLogin, onToggleOpenAtLogin, onUpgrade }) {
   const plan = subscription?.plan || 'free'
   const limits = PLAN_LIMITS[plan]
   const isPro = plan === 'pro'
@@ -137,6 +137,25 @@ export default function SettingsView({ subscription, usage, user, devices, clips
           <button
             className={`settings-toggle ${autoCapture ? 'settings-toggle--on' : ''}`}
             onClick={() => onToggleAutoCapture(!autoCapture)}
+          >
+            <span className="settings-toggle-knob" />
+          </button>
+        </div>
+      </div>
+
+      {/* Launch at startup */}
+      <div className="settings-section">
+        <h3 className="settings-section-title">Startup</h3>
+        <div className="settings-toggle-row">
+          <div className="settings-toggle-info">
+            <span className="settings-toggle-label">Launch at login</span>
+            <span className="settings-toggle-desc">
+              Start SnipSync automatically when you turn on your computer.
+            </span>
+          </div>
+          <button
+            className={`settings-toggle ${openAtLogin ? 'settings-toggle--on' : ''}`}
+            onClick={() => onToggleOpenAtLogin(!openAtLogin)}
           >
             <span className="settings-toggle-knob" />
           </button>

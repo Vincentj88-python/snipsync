@@ -250,6 +250,14 @@ function registerIpcHandlers() {
     autoUpdater.quitAndInstall(false, true)
   })
 
+  ipcMain.handle('get-login-item-settings', () => {
+    return app.getLoginItemSettings()
+  })
+
+  ipcMain.handle('set-open-at-login', (_event, enabled) => {
+    app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: true })
+  })
+
   // ── Clipboard auto-capture ──────────────────────────
   ipcMain.handle('start-clipboard-watch', () => {
     if (clipboardWatcher) return
@@ -282,6 +290,14 @@ function registerIpcHandlers() {
 app.whenReady().then(() => {
   if (process.platform === 'darwin') {
     app.dock.hide()
+  }
+
+  // Launch on system startup (production only)
+  if (!isDev) {
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      openAsHidden: true,
+    })
   }
 
   registerIpcHandlers()

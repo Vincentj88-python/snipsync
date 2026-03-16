@@ -57,6 +57,7 @@ export default function App() {
   const [view, setView] = useState('clips') // 'clips' | 'settings'
   const [subscription, setSubscription] = useState(null)
   const [usage, setUsage] = useState({ clips: 0, devices: 0 })
+  const [openAtLogin, setOpenAtLogin] = useState(true)
   const [autoCapture, setAutoCapture] = useState(() => {
     return localStorage.getItem('snip_auto_capture') === 'true'
   })
@@ -75,6 +76,8 @@ export default function App() {
         setDeviceName(name)
         const mid = await window.electronAPI.getMachineId()
         setMachineId(mid)
+        const loginSettings = await window.electronAPI.getLoginItemSettings()
+        setOpenAtLogin(loginSettings?.openAtLogin ?? true)
       } else {
         setPlatform('darwin')
         setDeviceName('Browser')
@@ -317,6 +320,11 @@ export default function App() {
     localStorage.setItem('snip_auto_capture', String(enabled))
   }, [])
 
+  const handleToggleOpenAtLogin = useCallback((enabled) => {
+    setOpenAtLogin(enabled)
+    window.electronAPI?.setOpenAtLogin(enabled)
+  }, [])
+
   const handleImagePaste = useCallback(async (file) => {
     if (!user || !deviceId) return
     const plan = subscription?.plan || 'free'
@@ -546,6 +554,8 @@ export default function App() {
           clips={clips}
           autoCapture={autoCapture}
           onToggleAutoCapture={handleToggleAutoCapture}
+          openAtLogin={openAtLogin}
+          onToggleOpenAtLogin={handleToggleOpenAtLogin}
           onUpgrade={() => {
             const checkoutUrl = import.meta.env.VITE_LS_CHECKOUT_URL
             if (checkoutUrl) {
