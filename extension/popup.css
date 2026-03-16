@@ -1,28 +1,24 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  width: 400px;
-  min-height: 440px;
-  max-height: 560px;
+  width: 380px;
+  min-height: 420px;
+  max-height: 540px;
   font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-  background: #000;
+  background: #0a0a0a;
   color: #e5e5e5;
   font-size: 13px;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  padding: 8px;
 }
 
-html { min-height: 440px; background: #000; }
+html { min-height: 420px; background: #0a0a0a; }
 
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 424px;
-  background: #080808;
-  border-radius: 16px;
-  border: 1px solid #1a1a1a;
-  overflow: hidden;
+  min-height: 420px;
+  background: #0a0a0a;
 }
 
 /* ── Loading ─────────────────────────────── */
@@ -51,11 +47,10 @@ html { min-height: 440px; background: #000; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 424px;
+  min-height: 420px;
   gap: 20px;
-  background: radial-gradient(ellipse at center, #0a1a0a 0%, #080808 70%);
+  background: radial-gradient(ellipse at center, #0f1a0f 0%, #0a0a0a 70%);
   padding: 40px 32px;
-  border-radius: 16px;
 }
 
 .signin-header {
@@ -98,7 +93,7 @@ html { min-height: 440px; background: #000; }
 .main {
   display: flex;
   flex-direction: column;
-  height: 524px;
+  height: 540px;
 }
 
 /* ── Header ──────────────────────────────── */
