@@ -93,7 +93,7 @@ export const checkDeviceExists = async (deviceId) => {
 // ── Subscription / plan helpers ──────────────────────
 
 export const PLAN_LIMITS = {
-  free: { maxClips: 50, maxDevices: 2, historyDays: 7 },
+  free: { maxClips: 30, maxDevices: 2, historyDays: 7 },
   pro:  { maxClips: Infinity, maxDevices: Infinity, historyDays: Infinity },
 }
 
