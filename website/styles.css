@@ -1127,6 +1127,97 @@ a { color: inherit; text-decoration: none; }
   font-family: 'DM Mono', monospace;
 }
 
+/* Waitlist form */
+.waitlist-form {
+  margin-bottom: 24px;
+}
+
+.waitlist-input-wrap {
+  display: flex;
+  gap: 0;
+  max-width: 440px;
+  margin: 0 auto;
+  background: #0e0e0e;
+  border: 1px solid #1e1e1e;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 200ms ease;
+}
+
+.waitlist-input-wrap:focus-within {
+  border-color: rgba(34,197,94,0.3);
+}
+
+.waitlist-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #e5e5e5;
+}
+
+.waitlist-input::placeholder {
+  color: #444;
+}
+
+.waitlist-btn {
+  background: #22c55e;
+  color: #000;
+  border: none;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 200ms ease;
+  white-space: nowrap;
+}
+
+.waitlist-btn:hover {
+  background: #16a34a;
+}
+
+.waitlist-status {
+  font-size: 13px;
+  margin-top: 10px;
+  min-height: 20px;
+}
+
+.waitlist-status--success {
+  color: #22c55e;
+}
+
+.waitlist-status--error {
+  color: #ef4444;
+}
+
+.waitlist-platforms {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #555;
+}
+
+.waitlist-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.waitlist-divider {
+  color: #333;
+}
+
+.waitlist-note {
+  color: #444;
+  font-size: 12px;
+}
+
 /* ========================================
    FOOTER
    ======================================== */
@@ -1231,8 +1322,9 @@ a { color: inherit; text-decoration: none; }
   .bento-grid { grid-template-columns: 1fr; }
   .bento-card--lg { grid-column: span 1; }
 
-  .dl-buttons { flex-direction: column; align-items: center; }
-  .dl-btn { width: 100%; justify-content: center; }
+  .waitlist-input-wrap { flex-direction: column; border-radius: 12px; }
+  .waitlist-btn { border-radius: 0 0 12px 12px; }
+  .waitlist-platforms { flex-wrap: wrap; }
 
   .foot-inner { flex-direction: column; gap: 16px; text-align: center; }
   .foot-left { flex-direction: column; gap: 8px; }

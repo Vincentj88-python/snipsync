@@ -186,3 +186,58 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     }
   });
 });
+
+
+// ============================================
+// WAITLIST FORM
+// ============================================
+
+(function () {
+  const form = document.getElementById('waitlist-form');
+  if (!form) return;
+
+  const SUPABASE_URL = 'https://kohwpkwcopkslbtkczag.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvaHdwa3djb3Brc2xidGtjemFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2MDY0NTAsImV4cCI6MjA1NzE4MjQ1MH0.a2BPKHO8KDLmSfT4cIqBxy3zvCXXwm5cMDRyBhmCEkI';
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('waitlist-email').value.trim();
+    const status = document.getElementById('waitlist-status');
+    const btn = form.querySelector('.waitlist-btn');
+
+    if (!email) return;
+
+    btn.textContent = 'Joining...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        status.textContent = "You're on the list! We'll email you when SnipSync is ready.";
+        status.className = 'waitlist-status waitlist-status--success';
+        form.querySelector('.waitlist-input').value = '';
+      } else if (res.status === 409) {
+        status.textContent = "You're already on the list! We'll be in touch soon.";
+        status.className = 'waitlist-status waitlist-status--success';
+      } else {
+        throw new Error('Failed');
+      }
+    } catch {
+      status.textContent = 'Something went wrong. Try again or email vincent@snipsync.xyz';
+      status.className = 'waitlist-status waitlist-status--error';
+    }
+
+    btn.textContent = 'Join waitlist';
+    btn.disabled = false;
+  });
+})();
