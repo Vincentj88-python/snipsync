@@ -60,6 +60,8 @@ async function apiRequest(path, options = {}) {
 
 async function signInWithGoogle() {
   const redirectUrl = chrome.identity.getRedirectURL()
+
+  // Build Supabase OAuth URL with the extension's redirect
   const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`
 
   return new Promise((resolve, reject) => {
@@ -70,16 +72,33 @@ async function signInWithGoogle() {
           reject(new Error(chrome.runtime.lastError.message))
           return
         }
+
+        if (!responseUrl) {
+          reject(new Error('No response URL'))
+          return
+        }
+
         try {
-          // Extract tokens from the URL hash
+          // Tokens can be in the hash fragment or query params
           const url = new URL(responseUrl)
+          let accessToken, refreshToken
+
+          // Try hash first (Supabase implicit grant)
           const hash = url.hash.substring(1)
-          const params = new URLSearchParams(hash)
-          const accessToken = params.get('access_token')
-          const refreshToken = params.get('refresh_token')
+          if (hash) {
+            const hashParams = new URLSearchParams(hash)
+            accessToken = hashParams.get('access_token')
+            refreshToken = hashParams.get('refresh_token')
+          }
+
+          // Fall back to query params
+          if (!accessToken) {
+            accessToken = url.searchParams.get('access_token')
+            refreshToken = url.searchParams.get('refresh_token')
+          }
 
           if (!accessToken) {
-            reject(new Error('No access token received'))
+            reject(new Error('Sign in failed — no token received. Make sure the extension redirect URL is added to Supabase.'))
             return
           }
 

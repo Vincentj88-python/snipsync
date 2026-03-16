@@ -191,6 +191,7 @@ async function handleSignIn() {
   } catch (err) {
     state.loading = false
     render()
+    showToast(err.message || 'Sign in failed')
   }
 }
 
