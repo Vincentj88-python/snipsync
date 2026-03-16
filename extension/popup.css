@@ -2,6 +2,7 @@
 
 body {
   width: 380px;
+  min-height: 400px;
   max-height: 520px;
   font-family: -apple-system, 'Segoe UI', sans-serif;
   background: #0a0a0a;
@@ -10,10 +11,14 @@ body {
   overflow: hidden;
 }
 
+html {
+  min-height: 400px;
+}
+
 #app {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 400px;
 }
 
 /* Loading */
@@ -43,6 +48,7 @@ body {
   padding: 48px 32px;
   gap: 16px;
   background: radial-gradient(ellipse at center, #0f1a0f 0%, #0a0a0a 70%);
+  min-height: 400px;
 }
 
 .signin-header {
