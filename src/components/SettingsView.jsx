@@ -94,8 +94,8 @@ export default function SettingsView({ subscription, usage, user, devices, clips
           <ul className="settings-pro-list">
             <li>Unlimited clips &amp; devices</li>
             <li>Unlimited history</li>
-            <li>Image &amp; file clips (coming soon)</li>
-            <li>Clipboard auto-capture (coming soon)</li>
+            <li>Image &amp; file clips </li>
+            <li>Clipboard auto-capture </li>
             <li>Priority support</li>
           </ul>
           <div className="settings-price">
