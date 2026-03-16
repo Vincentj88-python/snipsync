@@ -158,6 +158,91 @@ Tasks:
 - API access for Pro/Team (programmatic clip creation)
 - Webhooks for Pro/Team (trigger external actions on new clips)
 
+### Phase 6: Future Expansion
+
+#### Clip Templates / Snippets
+- Save reusable text blocks: email signatures, code boilerplate, canned responses
+- Assign keyboard shortcuts to frequently-used clips
+- Variable insertion: `{{date}}`, `{{name}}`, `{{clipboard}}` — fills in on paste
+- Competes with TextExpander ($3.33/mo) — bundle it into Pro
+
+#### OCR — Copy Text from Images
+- Screenshot a section of screen → SnipSync extracts text automatically
+- Photo of whiteboard → searchable text clip
+- Run locally via Tesseract.js (no API needed, works offline)
+- Killer marketing feature — great for demos and social media
+
+#### AI-Powered Clipboard
+- Natural language search: "find that API key from last Tuesday"
+- Auto-summarize long clips
+- Auto-categorize with smart tags
+- Use local LLM (Ollama) or cheap API (Claude Haiku) — no data leaves unless user opts in
+
+#### Universal Paste Formats
+- Copy URL on Mac → paste as clickable hyperlink in Word, markdown link in VS Code, plain URL in terminal
+- Copy phone number → auto-format for the country you're in
+- Copy code → paste into Slack and it auto-wraps in a code block
+- Context-aware output formatting
+
+#### Clip Actions / Automations
+- Pattern-matched triggers on new clips:
+  - URL → auto-shorten (Bitly)
+  - Tracking number → show delivery status inline
+  - Color hex → preview swatch
+  - JSON → auto-pretty-print
+  - Email address → LinkedIn profile preview
+- User-defined rules: "If clip contains `JIRA-`, open in browser"
+
+#### Clip API + Webhooks
+- REST API: `POST /api/clips` for programmatic clip creation
+- Webhooks: trigger external actions when clips are created
+- CI/CD pipeline finishes → deploy URL appears on all devices
+- Zapier/Make integration → connect to 5,000+ apps
+- Turns SnipSync into a developer notification layer
+
+#### Spaces (Shared Clipboard Rooms)
+- Public spaces: `engineering.snipsync.xyz` — anyone with the link can push/pull clips
+- Use cases: hackathons, classrooms, live events, pair programming
+- Not chat, not docs — a shared clipboard. Fast, ephemeral, zero friction
+- Viral growth mechanism — gets shared on social media
+
+#### Cross-App Clipboard Protocol
+- Open protocol: `snipsync://` that any app can implement
+- VS Code extension syncing code selections
+- Figma plugin sending design specs as clips
+- Become the standard for cross-app data transfer
+
+#### Offline-First with CRDTs
+- Local SQLite database that syncs when online
+- Works on planes, tunnels, bad connectivity
+- Conflict-free merging via CRDTs when devices reconnect
+
+#### SnipSync for Enterprise
+- Self-hosted option (deploy your own Supabase instance)
+- SSO (SAML/OIDC) instead of Google-only
+- Admin dashboard: usage analytics, compliance controls, data retention
+- DLP (Data Loss Prevention): block patterns like credit cards, SSNs
+- Audit logs: who copied what, when, where
+- SOC2 compliance
+- Pricing: $10-20/user/month — 500 users = $5-10k/month
+
+#### Multimodal Input
+- Voice-to-clip: hold button, speak, creates text clip via Whisper
+- Handwriting-to-clip: draw on phone, OCR converts to text
+- Camera-to-clip: point phone camera at text, auto-creates clip
+
+#### Prioritized Build Order (when ready)
+
+| Priority | Feature | Effort | Revenue Impact |
+|----------|---------|--------|----------------|
+| 1 | Clip Templates / Snippets | Low | High — justifies Pro alone |
+| 2 | OCR from screenshots | Medium | High — killer demo feature |
+| 3 | AI search / auto-tag | Medium | Medium — Pro differentiator |
+| 4 | Clip API + Webhooks | Medium | High — opens developer market |
+| 5 | Spaces (shared rooms) | Medium | High — viral growth |
+| 6 | Clip Actions | High | Medium |
+| 7 | Enterprise / self-hosted | High | Very high — after PMF |
+
 ## Performance Budget
 
 | Metric | Target |
