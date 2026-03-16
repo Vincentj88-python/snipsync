@@ -1,5 +1,6 @@
 // Supabase client for the browser extension
 // Uses the REST API directly — no npm dependencies needed
+;(function() {
 
 const SUPABASE_URL = 'https://kohwpkwcopkslbtkczag.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvaHdwa3djb3Brc2xidGtjemFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMzkyNTAsImV4cCI6MjA4ODcxNTI1MH0.PrsQDtXSa8Y8vy-JgIfBk3l0iVtmedHPqr72fzhwd7k'
@@ -256,3 +257,5 @@ window.SnipSync = {
   getDeviceCount,
   detectType,
 }
+
+})();

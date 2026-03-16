@@ -1,6 +1,8 @@
+;(async function() {
+
 if (!window.SnipSync) {
-  document.getElementById('app').innerHTML = '<div style="padding:20px;color:#ef4444;font-size:12px">Failed to load SnipSync. Check console for errors.</div>'
-  throw new Error('SnipSync not loaded')
+  document.getElementById('app').innerHTML = '<div style="padding:20px;color:#ef4444;font-size:12px">Failed to load. Check console.</div>'
+  return
 }
 
 const {
@@ -352,3 +354,5 @@ async function init() {
 }
 
 init()
+
+})();
