@@ -333,11 +333,12 @@ const logoSvg = `<svg width="20" height="20" viewBox="0 0 100 100" fill="none"><
 async function init() {
   try {
     state.loading = true
-    render()
+    app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:400px;color:#555;font-size:12px">Loading...</div>'
 
     const user = await getUser()
+    state.user = user
+
     if (user) {
-      state.user = user
       await setupDevice()
       await loadClips()
     }
@@ -346,8 +347,7 @@ async function init() {
     render()
   } catch (err) {
     state.loading = false
-    app.innerHTML = `<div style="padding:20px;color:#ef4444;font-size:12px">Error: ${err.message}</div>`
-    console.error('SnipSync init error:', err)
+    app.innerHTML = `<div style="padding:20px;color:#ef4444;font-size:12px">Error: ${err.message}<br><br><pre style="color:#666;font-size:10px;white-space:pre-wrap">${err.stack}</pre></div>`
   }
 }
 
