@@ -8,7 +8,7 @@ if (!window.SnipSync) {
 const {
   signInWithGoogle, signOut, getUser, getSession,
   getClips, addClip, deleteClip, togglePinClip,
-  getSubscription, getClipCount, getDeviceCount,
+  getSubscription, getMonthlyClipCount, getDeviceCount,
   findDeviceByMachineId, registerDevice, updateDeviceLastSeen,
   detectType, PLAN_LIMITS,
 } = window.SnipSync
@@ -78,7 +78,7 @@ function render() {
           <span class="plan-badge plan-badge--${plan}">${plan.toUpperCase()}</span>
         </div>
         <div class="header-right">
-          <span class="usage">${state.usage.clips}${limits.maxClips === Infinity ? '' : '/' + limits.maxClips}</span>
+          <span class="usage">${state.usage.clips}${limits.maxClipsPerMonth === Infinity ? '' : '/' + limits.maxClipsPerMonth}</span>
           <button class="signout-btn" id="signout-btn" title="Sign out">${state.user.email?.[0]?.toUpperCase() || '?'}</button>
         </div>
       </div>
@@ -209,8 +209,8 @@ async function handleSend() {
 
   const plan = state.subscription?.plan || 'free'
   const limits = PLAN_LIMITS[plan]
-  if (state.usage.clips >= limits.maxClips) {
-    showToast(`Clip limit reached (${limits.maxClips}). Upgrade to Pro.`)
+  if (state.usage.clips >= limits.maxClipsPerMonth) {
+    showToast(`Monthly clip limit reached (${limits.maxClipsPerMonth}/month). Upgrade to Pro.`)
     return
   }
 
@@ -292,7 +292,7 @@ async function loadClips() {
   const [clips, sub, clipCount, deviceCount] = await Promise.all([
     getClips(state.user.id),
     getSubscription(state.user.id),
-    getClipCount(state.user.id),
+    getMonthlyClipCount(state.user.id),
     getDeviceCount(state.user.id),
   ])
 

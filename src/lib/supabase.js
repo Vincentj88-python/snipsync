@@ -93,8 +93,8 @@ export const checkDeviceExists = async (deviceId) => {
 // ── Subscription / plan helpers ──────────────────────
 
 export const PLAN_LIMITS = {
-  free: { maxClips: 30, maxDevices: 2, historyDays: 7 },
-  pro:  { maxClips: Infinity, maxDevices: Infinity, historyDays: Infinity },
+  free: { maxClipsPerMonth: 30, maxDevices: 2, historyDays: 7 },
+  pro:  { maxClipsPerMonth: Infinity, maxDevices: Infinity, historyDays: Infinity },
 }
 
 export const getSubscription = async (userId) => {
@@ -106,11 +106,15 @@ export const getSubscription = async (userId) => {
   return data
 }
 
-export const getClipCount = async (userId) => {
+export const getMonthlyClipCount = async (userId) => {
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
   const { count } = await supabase
     .from('clips')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
+    .gte('created_at', startOfMonth.toISOString())
   return count || 0
 }
 

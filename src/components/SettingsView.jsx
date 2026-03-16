@@ -26,7 +26,7 @@ export default function SettingsView({ subscription, usage, user, devices, clips
   const limits = PLAN_LIMITS[plan]
   const isPro = plan === 'pro'
 
-  const clipPercent = limits.maxClips === Infinity ? 0 : Math.min(100, (usage.clips / limits.maxClips) * 100)
+  const clipPercent = limits.maxClipsPerMonth === Infinity ? 0 : Math.min(100, (usage.clips / limits.maxClipsPerMonth) * 100)
   const devicePercent = limits.maxDevices === Infinity ? 0 : Math.min(100, (usage.devices / limits.maxDevices) * 100)
 
   return (
@@ -52,9 +52,9 @@ export default function SettingsView({ subscription, usage, user, devices, clips
           <div className="settings-usage">
             <div className="settings-meter">
               <div className="settings-meter-header">
-                <span className="settings-meter-label">Clips</span>
+                <span className="settings-meter-label">Clips this month</span>
                 <span className="settings-meter-value">
-                  {usage.clips}{limits.maxClips === Infinity ? '' : ` / ${limits.maxClips}`}
+                  {usage.clips}{limits.maxClipsPerMonth === Infinity ? '' : ` / ${limits.maxClipsPerMonth}`}
                 </span>
               </div>
               {!isPro && (

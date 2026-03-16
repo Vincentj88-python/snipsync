@@ -18,7 +18,7 @@ import {
   subscribeToClips,
   updateDeviceLastSeen,
   getSubscription,
-  getClipCount,
+  getMonthlyClipCount,
   getDeviceCount,
   PLAN_LIMITS,
   getTags,
@@ -204,7 +204,7 @@ export default function App() {
         const { data: tagsData } = await getTags(user.id)
         if (tagsData) setTags(tagsData)
         const [clipCount, deviceCount] = await Promise.all([
-          getClipCount(user.id),
+          getMonthlyClipCount(user.id),
           getDeviceCount(user.id),
         ])
         setUsage({ clips: clipCount, devices: deviceCount })
@@ -251,9 +251,9 @@ export default function App() {
     // Check clip limit
     const plan = subscription?.plan || 'free'
     const limits = PLAN_LIMITS[plan]
-    if (usage.clips >= limits.maxClips) {
+    if (usage.clips >= limits.maxClipsPerMonth) {
       setToast({
-        message: `Clip limit reached (${limits.maxClips}). Upgrade to Pro for unlimited clips.`,
+        message: `Monthly clip limit reached (${limits.maxClipsPerMonth}/month). Upgrade to Pro for unlimited.`,
         onDismiss: () => setToast(null),
       })
       return
@@ -300,7 +300,7 @@ export default function App() {
       // Check clip limit
       const plan = sub?.plan || 'free'
       const limits = PLAN_LIMITS[plan]
-      if (usg && usg.clips >= limits.maxClips) return
+      if (usg && usg.clips >= limits.maxClipsPerMonth) return
 
       const type = detectType(text)
       const { error } = await addClip(u.id, d, text, type)
@@ -333,8 +333,8 @@ export default function App() {
       return
     }
     const limits = PLAN_LIMITS[plan]
-    if (usage.clips >= limits.maxClips) {
-      setToast({ message: `Clip limit reached (${limits.maxClips}).`, onDismiss: () => setToast(null) })
+    if (usage.clips >= limits.maxClipsPerMonth) {
+      setToast({ message: `Monthly clip limit reached (${limits.maxClipsPerMonth}/month). Upgrade to Pro.`, onDismiss: () => setToast(null) })
       return
     }
     const { data: uploadData, error: uploadError } = await uploadClipImage(user.id, file)
