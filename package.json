@@ -57,7 +57,12 @@
       "icon": "public/app-icon.png"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "public/app-icon.png"
     },
     "publish": {
