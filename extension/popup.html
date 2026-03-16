@@ -6,7 +6,12 @@
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <div style="display:flex;align-items:center;justify-content:center;height:400px">
+      <div style="width:18px;height:18px;border:2px solid #222;border-top-color:#22c55e;border-radius:50%;animation:spin 0.7s linear infinite"></div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
   <script src="src/supabase.js"></script>
   <script src="src/popup.js"></script>
 </body>

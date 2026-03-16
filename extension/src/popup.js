@@ -1,3 +1,8 @@
+if (!window.SnipSync) {
+  document.getElementById('app').innerHTML = '<div style="padding:20px;color:#ef4444;font-size:12px">Failed to load SnipSync. Check console for errors.</div>'
+  throw new Error('SnipSync not loaded')
+}
+
 const {
   signInWithGoogle, signOut, getUser, getSession,
   getClips, addClip, deleteClip, togglePinClip,
@@ -326,18 +331,24 @@ const logoSvg = `<svg width="20" height="20" viewBox="0 0 100 100" fill="none"><
 // ── Init ────────────────────────────────────────────
 
 async function init() {
-  state.loading = true
-  render()
+  try {
+    state.loading = true
+    render()
 
-  const user = await getUser()
-  if (user) {
-    state.user = user
-    await setupDevice()
-    await loadClips()
+    const user = await getUser()
+    if (user) {
+      state.user = user
+      await setupDevice()
+      await loadClips()
+    }
+
+    state.loading = false
+    render()
+  } catch (err) {
+    state.loading = false
+    app.innerHTML = `<div style="padding:20px;color:#ef4444;font-size:12px">Error: ${err.message}</div>`
+    console.error('SnipSync init error:', err)
   }
-
-  state.loading = false
-  render()
 }
 
 init()
