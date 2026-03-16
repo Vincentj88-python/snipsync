@@ -46,6 +46,10 @@
       {
         "from": "public/tray-icon.png",
         "to": "tray-icon.png"
+      },
+      {
+        "from": "public/tray-icon@2x.png",
+        "to": "tray-icon@2x.png"
       }
     ],
     "mac": {

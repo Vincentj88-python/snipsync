@@ -405,10 +405,19 @@ export default function App() {
     }, 200)
   }, [clips])
 
+  const clipListRef = useRef(null)
+
   const handlePin = useCallback(async (id, pinned) => {
     const { data, error } = await togglePinClip(id, pinned)
-    if (data && !error) {
+    if (error) {
+      setToast({ message: 'Failed to pin clip', onDismiss: () => setToast(null) })
+      return
+    }
+    if (data) {
       setClips((prev) => prev.map((c) => (c.id === id ? data : c)))
+      if (pinned && clipListRef.current) {
+        setTimeout(() => clipListRef.current.scrollTo({ top: 0, behavior: 'smooth' }), 100)
+      }
     }
   }, [])
 
@@ -596,7 +605,7 @@ export default function App() {
           />
 
           {/* Clip list */}
-          <div className="clip-list">
+          <div className="clip-list" ref={clipListRef}>
             {filteredClips.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">&#128203;</div>

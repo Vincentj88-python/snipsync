@@ -100,17 +100,22 @@ function toggleWindow() {
 }
 
 function createTray() {
-  const iconPath = isDev
-    ? path.join(__dirname, '..', 'public', 'tray-icon.png')
-    : path.join(process.resourcesPath, 'tray-icon.png')
-  const icon = nativeImage.createFromPath(iconPath)
-  const resizedIcon = icon.resize({ width: 22, height: 22 })
+  const baseDir = isDev
+    ? path.join(__dirname, '..', 'public')
+    : process.resourcesPath
+  const icon = nativeImage.createFromPath(path.join(baseDir, 'tray-icon.png'))
 
-  if (process.platform === 'darwin') {
-    resizedIcon.setTemplateImage(true)
+  // Add @2x for Retina displays
+  const icon2x = nativeImage.createFromPath(path.join(baseDir, 'tray-icon@2x.png'))
+  if (!icon2x.isEmpty()) {
+    icon.addRepresentation({ scaleFactor: 2.0, buffer: icon2x.toPNG() })
   }
 
-  tray = new Tray(resizedIcon)
+  if (process.platform === 'darwin') {
+    icon.setTemplateImage(true)
+  }
+
+  tray = new Tray(icon)
   tray.setToolTip('SnipSync')
 
   const contextMenu = Menu.buildFromTemplate([

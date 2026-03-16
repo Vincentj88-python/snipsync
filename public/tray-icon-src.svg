@@ -1,6 +1,5 @@
 <svg width="22" height="22" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
-  <!-- Simple two-dot S-curve for tray. Black on transparent — macOS template image inverts to white automatically -->
-  <circle cx="5" cy="8" r="2.5" fill="black"/>
-  <circle cx="17" cy="14" r="2.5" fill="black"/>
-  <path d="M 5 8 C 9 8, 8 14, 11 14 C 14 14, 13 8, 17 8" stroke="black" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <circle cx="4.5" cy="8.5" r="3" fill="black"/>
+  <circle cx="17.5" cy="13.5" r="3" fill="black"/>
+  <path d="M 4.5 8.5 C 9 8.5, 8 13.5, 11 13.5 C 14 13.5, 13 8.5, 17.5 8.5" stroke="black" stroke-width="2" stroke-linecap="round" fill="none"/>
 </svg>
