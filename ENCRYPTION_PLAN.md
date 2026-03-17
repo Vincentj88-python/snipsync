@@ -1,4 +1,7 @@
-# SnipSync — End-to-End Encryption Plan
+# SnipSync — End-to-End Encryption Plan (IMPLEMENTED 2026-03-17)
+
+> **Status**: Fully implemented. See `src/lib/crypto.js` for the implementation.
+> Recovery uses 12-word phrases (not 24 as originally planned). All other details match Option A below.
 
 ## The Problem
 
@@ -262,19 +265,21 @@ When encryption ships, update privacy.html:
 
 ## Timeline
 
-This is a **Phase 5 feature** (after team features). Estimated effort: 2-3 sessions.
+~~This is a **Phase 5 feature** (after team features). Estimated effort: 2-3 sessions.~~
 
-### Build order:
-1. Add tweetnacl-js dependency
-2. Schema migration (encrypted_master_key, key_salt, nonce columns)
-3. Key generation + vault password UI in Settings
-4. Encrypt/decrypt functions in supabase.js
-5. Migrate existing clips (encrypt in batches)
-6. Update ClipCard to decrypt on render
-7. Update browser extension with same encryption
-8. Recovery key flow
-9. Tests for encrypt/decrypt round-trip
-10. Update privacy policy
+**Shipped 2026-03-17** — moved up from Phase 5 and completed in a single session.
+
+### Build order (all completed):
+1. [x] Add tweetnacl-js dependency
+2. [x] Schema migration (encrypted_master_key, key_salt, key_nonce, encryption_enabled, encrypted_recovery_key on profiles; encrypted, nonce on clips)
+3. [x] Key generation + vault password UI in Settings
+4. [x] Encrypt/decrypt functions in `src/lib/crypto.js` (separate module, not in supabase.js)
+5. [x] Migrate existing clips (encrypt in batches via `encryptExistingClips()`)
+6. [x] Update ClipCard to decrypt on render
+7. [ ] Update browser extension with same encryption (not yet)
+8. [x] Recovery key flow (12-word phrase, not 24 as originally planned)
+9. [ ] Tests for encrypt/decrypt round-trip (not yet)
+10. [x] Update privacy policy
 
 ## Cost
 

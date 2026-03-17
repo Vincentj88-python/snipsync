@@ -77,41 +77,32 @@ All shipped in v0.2.0:
 - [x] Tray context menu (Open SnipSync, Quit)
 - [x] URL detection includes www. domains (not just http/https)
 
-### Phase 3: Browser Extension (v0.3.0)
+### Phase 3: Browser Extension (v0.3.0) — IN PROGRESS
 
 Goal: Expand reach — browser extension is zero-friction install, works on any OS
 
-Tasks:
+Completed:
+- [x] Chrome Extension scaffold (Manifest V3)
+- [x] Google OAuth via chrome.identity API
+- [x] Same Supabase client, same Realtime subscriptions
+- [x] Popup with clip list
+- [x] Real-time sync
+- [x] Counts as device toward free tier limit
 
-1. Chrome Extension scaffold:
-   - Manifest V3 (Chrome + Edge + Brave)
-   - Small React popup (reuse existing component patterns + styles)
-   - Same Supabase client, same auth, same Realtime subscriptions
-   - Google OAuth works natively in extensions (chrome.identity API)
-   - Register as device with platform "chrome"
+Remaining:
+- [ ] Right-click context menu: "Send to SnipSync" on selected text
+- [ ] Right-click link: "Snip this link"
+- [ ] Keyboard shortcut (Alt+S) to snip selected text
+- [ ] Publish to Chrome Web Store
+- [ ] Firefox port (Manifest V3 → Firefox WebExtensions API)
+- [ ] Publish to Firefox Add-ons
+- [ ] Extension popup CSS polish (hard square corners limitation)
 
-2. Core features:
-   - Popup shows clip list (same as desktop app)
-   - Right-click context menu: "Send to SnipSync" on selected text
-   - Right-click link: "Snip this link"
-   - Keyboard shortcut (Alt+S) to snip selected text
-   - Copy button on each clip
-   - Real-time sync — new clips appear instantly
-
-3. Tier enforcement:
-   - Counts as a device toward free tier limit
-   - Clip limits same as desktop
-   - Pro features (image clips, auto-capture) not in extension v1
-
-4. Firefox port:
-   - Adapt Manifest V3 → Firefox WebExtensions API
-   - Publish to Firefox Add-ons
-
-5. Performance:
-   - Extension popup must open in < 200ms
-   - Lazy load clips on popup open, not on background
-   - No background polling — only sync when popup is open
-   - Service worker for badge notifications (new clips count)
+Performance:
+- Extension popup must open in < 200ms
+- Lazy load clips on popup open, not on background
+- No background polling — only sync when popup is open
+- Service worker for badge notifications (new clips count)
 
 ### Phase 4: Team Features (v1.0.0)
 
@@ -154,7 +145,7 @@ Tasks:
 
 - Mobile companion app (React Native) — read-only at first, then full sync
 - Global hotkey to summon SnipSync (Cmd+Shift+V or configurable)
-- End-to-end encryption (client-side encrypt/decrypt, zero-knowledge)
+- ~~End-to-end encryption (client-side encrypt/decrypt, zero-knowledge)~~ — **DONE** (shipped 2026-03-17, moved up from Phase 5)
 - API access for Pro/Team (programmatic clip creation)
 - Webhooks for Pro/Team (trigger external actions on new clips)
 
@@ -277,7 +268,7 @@ Tasks:
 | Clipboard monitoring | Electron main process | Can't access system clipboard from renderer |
 | List virtualization | react-window | Tiny bundle (6KB), proven, simple API |
 | Browser extension | Manifest V3 | Required for Chrome Web Store, works in Edge/Brave too |
-| E2E encryption (future) | tweetnacl-js | Small, audited, no native deps |
+| E2E encryption | tweetnacl-js + Web Crypto PBKDF2 | Small, audited, no native deps. Shipped 2026-03-17. |
 
 ## Payment Integration Notes (Lemon Squeezy)
 
@@ -326,23 +317,30 @@ Tasks:
 
 On the free plan, Supabase pauses the project after 1 week of no API calls. All users would see the app go dead. **Upgrade to Pro before any public launch.**
 
-## Current Status (as of March 2026)
+## Current Status (as of 2026-03-17)
 
 ### What's live
 - Desktop app v0.2.0 (Mac + Windows) — GitHub Release published
-- Website at snipsync.xyz with waitlist — deployed on Vercel
+- E2E encryption shipped (tweetnacl, vault password, PBKDF2, 12-word recovery)
+- Chrome extension working (loaded unpacked, OAuth via chrome.identity)
+- Monthly clip limit (30/month free, resets 1st)
+- Account deletion + ensureProfile auto-recreation
+- Website at snipsync.xyz with waitlist + encryption section — deployed on Vercel
 - GitHub repo is public: github.com/Vincentj88-python/snipsync
 - Vercel Analytics enabled
-- Sentry error reporting active
+- Sentry error reporting active (confirmed working)
 - 27 tests passing
 
 ### Waiting on
 - Lemon Squeezy account approval (submitted, awaiting review)
 - Apple Developer account ($99/yr) — needed for Mac code signing / notarization
 - Google OAuth consent screen verification (100 user cap without it)
+- Supabase upgrade (must upgrade before 50 users — auto-pause risk on free plan)
 
 ### Next up
-- Phase 3: Browser extension (Chrome first, then Firefox)
+- Fix settings scroll on Mac (priority #1 bug)
+- Test encryption end-to-end on both devices
+- Consider version bump to v0.3.0
 - Connect Lemon Squeezy once approved (plug in checkout URL + deploy webhook)
 - Submit Google OAuth for verification with privacy policy URL
 
