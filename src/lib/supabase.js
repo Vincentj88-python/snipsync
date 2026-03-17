@@ -30,6 +30,19 @@ export const getUser = async () => {
   return user
 }
 
+export const ensureProfile = async (user) => {
+  if (!user) return
+  const { data } = await supabase.from('profiles').select('id').eq('id', user.id).single()
+  if (!data) {
+    await supabase.from('profiles').insert({
+      id: user.id,
+      email: user.email,
+      display_name: user.user_metadata?.full_name || null,
+      avatar_url: user.user_metadata?.avatar_url || null,
+    })
+  }
+}
+
 export const findDeviceByMachineId = async (userId, machineId) => {
   if (!machineId) return null
   const { data } = await supabase

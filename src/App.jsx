@@ -26,6 +26,7 @@ import {
   addImageClip,
   deleteClipImage,
   getImageUrl,
+  ensureProfile,
 } from './lib/supabase'
 import ClipCard, { PlatformIcon } from './components/ClipCard'
 import InputArea from './components/InputArea'
@@ -144,6 +145,9 @@ export default function App() {
 
     const setup = async () => {
       try {
+        // Ensure profile exists (handles re-login after account deletion)
+        await ensureProfile(user)
+
         let storedDeviceId = localStorage.getItem('snip_device_id')
 
         // Verify stored device still exists in Supabase
