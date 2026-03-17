@@ -996,6 +996,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
+  padding-bottom: 60px;
 }
 
 .settings-section {
