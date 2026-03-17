@@ -19,6 +19,12 @@ export const signInWithGoogle = async () => {
 
 export const signOut = () => supabase.auth.signOut()
 
+export const deleteAccount = async (userId) => {
+  // Delete profile (cascades to devices, clips, subscriptions, tags via FK)
+  await supabase.from('profiles').delete().eq('id', userId)
+  await supabase.auth.signOut()
+}
+
 export const getUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   return user

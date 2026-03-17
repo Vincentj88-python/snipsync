@@ -33,12 +33,59 @@ export async function generateMasterKey(vaultPassword) {
   const nonce = nacl.randomBytes(24)
   const encryptedMasterKey = nacl.secretbox(masterKey, nonce, wrappingKey)
 
+  // Generate recovery key — 24 random words from a simple wordlist
+  const recoveryPhrase = generateRecoveryPhrase()
+
+  // Encrypt master key with recovery phrase too (as a backup)
+  const recoverySalt = nacl.randomBytes(16)
+  const recoveryWrappingKey = await deriveKey(recoveryPhrase, recoverySalt)
+  const recoveryNonce = nacl.randomBytes(24)
+  const encryptedRecoveryKey = nacl.secretbox(masterKey, recoveryNonce, recoveryWrappingKey)
+
   return {
     masterKey,
     encryptedMasterKey: encodeBase64(encryptedMasterKey),
     salt: encodeBase64(salt),
     nonce: encodeBase64(nonce),
+    recoveryPhrase,
+    encryptedRecoveryKey: encodeBase64(encryptedRecoveryKey) + ':' + encodeBase64(recoverySalt) + ':' + encodeBase64(recoveryNonce),
   }
+}
+
+// ── Recovery phrase ─────────────────────────────────
+
+const WORDLIST = [
+  'anchor','basket','candle','desert','eagle','forest','garden','harbor',
+  'island','jungle','kernel','lantern','marble','nectar','orange','palace',
+  'quartz','rabbit','silver','timber','umbrella','velvet','walnut','zenith',
+  'bridge','castle','dragon','ember','falcon','glacier','helmet','ivory',
+  'jasper','knight','lagoon','mirror','nimbus','orchid','prism','raven',
+  'shadow','temple','voyage','whisper','arctic','beacon','cipher','dagger',
+  'fossil','garnet','horizon','impulse','jewel','kindle','lunar','meadow',
+  'nebula','oasis','phantom','ripple','summit','trident','vertex','wander',
+]
+
+function generateRecoveryPhrase() {
+  const words = []
+  for (let i = 0; i < 12; i++) {
+    const idx = nacl.randomBytes(1)[0] % WORDLIST.length
+    words.push(WORDLIST[idx])
+  }
+  return words.join(' ')
+}
+
+export async function unlockWithRecoveryPhrase(recoveryPhrase, encryptedRecoveryKeyData) {
+  const [encB64, saltB64, nonceB64] = encryptedRecoveryKeyData.split(':')
+  const salt = decodeBase64(saltB64)
+  const wrappingKey = await deriveKey(recoveryPhrase, salt)
+  const encrypted = decodeBase64(encB64)
+  const nonce = decodeBase64(nonceB64)
+
+  const masterKey = nacl.secretbox.open(encrypted, nonce, wrappingKey)
+  if (!masterKey) {
+    throw new Error('Invalid recovery phrase')
+  }
+  return masterKey
 }
 
 export async function unlockMasterKey(vaultPassword, encryptedMasterKeyB64, saltB64, nonceB64) {
@@ -78,12 +125,13 @@ export function decryptClip(encryptedContent, nonceB64, masterKey) {
 
 // ── Profile encryption settings ─────────────────────
 
-export async function saveEncryptionKeys(userId, encryptedMasterKey, salt, nonce) {
+export async function saveEncryptionKeys(userId, encryptedMasterKey, salt, nonce, encryptedRecoveryKey) {
   return supabase.from('profiles').update({
     encrypted_master_key: encryptedMasterKey,
     key_salt: salt,
     key_nonce: nonce,
     encryption_enabled: true,
+    encrypted_recovery_key: encryptedRecoveryKey || null,
   }).eq('id', userId)
 }
 
@@ -93,6 +141,14 @@ export async function getEncryptionSettings(userId) {
     .eq('id', userId)
     .single()
   return data
+}
+
+export async function getRecoveryKeyData(userId) {
+  const { data } = await supabase.from('profiles')
+    .select('encrypted_recovery_key')
+    .eq('id', userId)
+    .single()
+  return data?.encrypted_recovery_key || null
 }
 
 export async function disableEncryption(userId) {

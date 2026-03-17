@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
-import { PLAN_LIMITS } from '../lib/supabase'
+import { PLAN_LIMITS, deleteAccount } from '../lib/supabase'
 import {
   generateMasterKey,
   unlockMasterKey,
+  unlockWithRecoveryPhrase,
   saveEncryptionKeys,
   getEncryptionSettings,
+  getRecoveryKeyData,
   encryptExistingClips,
   decryptAllClips,
   disableEncryption,
@@ -35,10 +37,14 @@ export default function SettingsView({ subscription, usage, user, devices, clips
   const limits = PLAN_LIMITS[plan]
   const isPro = plan === 'pro'
   const [vaultPassword, setVaultPassword] = useState('')
-  const [vaultAction, setVaultAction] = useState(null) // 'setup' | 'unlock' | 'disable'
+  const [vaultAction, setVaultAction] = useState(null) // 'setup' | 'unlock' | 'recover' | 'disable'
   const [vaultLoading, setVaultLoading] = useState(false)
   const [vaultError, setVaultError] = useState('')
   const [migrationProgress, setMigrationProgress] = useState(null)
+  const [recoveryPhrase, setRecoveryPhrase] = useState(null)
+  const [recoveryInput, setRecoveryInput] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const clipPercent = limits.maxClipsPerMonth === Infinity ? 0 : Math.min(100, (usage.clips / limits.maxClipsPerMonth) * 100)
   const devicePercent = limits.maxDevices === Infinity ? 0 : Math.min(100, (usage.devices / limits.maxDevices) * 100)
@@ -243,13 +249,13 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                   if (vaultPassword.length < 8) { setVaultError('Password must be at least 8 characters'); return }
                   setVaultLoading(true)
                   try {
-                    const { masterKey, encryptedMasterKey, salt, nonce } = await generateMasterKey(vaultPassword)
-                    await saveEncryptionKeys(user.id, encryptedMasterKey, salt, nonce)
+                    const result = await generateMasterKey(vaultPassword)
+                    await saveEncryptionKeys(user.id, result.encryptedMasterKey, result.salt, result.nonce, result.encryptedRecoveryKey)
                     setMigrationProgress('starting...')
-                    const count = await encryptExistingClips(user.id, masterKey)
+                    const count = await encryptExistingClips(user.id, result.masterKey)
                     setMigrationProgress(`${count} clips encrypted`)
-                    onEncryptionChange(true, masterKey)
-                    setVaultAction(null)
+                    onEncryptionChange(true, result.masterKey)
+                    setRecoveryPhrase(result.recoveryPhrase)
                     setVaultPassword('')
                     setMigrationProgress(null)
                   } catch (err) {
@@ -307,6 +313,13 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                 Cancel
               </button>
             </div>
+            <button
+              className="settings-link"
+              style={{ marginTop: '4px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
+              onClick={() => { setVaultAction('recover'); setVaultPassword(''); setVaultError('') }}
+            >
+              Forgot password? Use recovery phrase
+            </button>
           </div>
         )}
 
@@ -356,6 +369,64 @@ export default function SettingsView({ subscription, usage, user, devices, clips
             </div>
           </div>
         )}
+
+        {/* Recovery phrase display (shown after setup) */}
+        {recoveryPhrase && (
+          <div className="settings-vault-form" style={{ background: '#0e1a0e', border: '1px solid #1a3a1a', borderRadius: '8px', padding: '12px' }}>
+            <p className="settings-toggle-label" style={{ color: '#22c55e', marginBottom: '6px' }}>Save your recovery phrase</p>
+            <p className="settings-toggle-desc" style={{ marginBottom: '8px' }}>
+              Write this down and keep it safe. If you forget your vault password, this is the only way to recover your clips.
+            </p>
+            <div className="settings-vault-input" style={{ background: '#111', fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.6', padding: '10px', userSelect: 'all', cursor: 'text' }}>
+              {recoveryPhrase}
+            </div>
+            <button className="settings-upgrade-btn" style={{ marginTop: '8px' }} onClick={() => { setRecoveryPhrase(null); setVaultAction(null) }}>
+              I've saved it
+            </button>
+          </div>
+        )}
+
+        {/* Recover with phrase */}
+        {vaultAction === 'recover' && (
+          <div className="settings-vault-form">
+            <p className="settings-toggle-desc" style={{ marginBottom: '8px' }}>Enter your 12-word recovery phrase to unlock your vault.</p>
+            <textarea
+              className="settings-vault-input"
+              placeholder="word1 word2 word3 ..."
+              value={recoveryInput}
+              onChange={(e) => { setRecoveryInput(e.target.value); setVaultError('') }}
+              rows={2}
+              style={{ resize: 'none' }}
+              autoFocus
+            />
+            {vaultError && <p className="settings-vault-error">{vaultError}</p>}
+            <div className="settings-vault-actions">
+              <button
+                className="settings-upgrade-btn"
+                disabled={vaultLoading}
+                onClick={async () => {
+                  setVaultLoading(true)
+                  try {
+                    const recoveryKeyData = await getRecoveryKeyData(user.id)
+                    if (!recoveryKeyData) { setVaultError('No recovery key found'); setVaultLoading(false); return }
+                    const masterKey = await unlockWithRecoveryPhrase(recoveryInput.trim().toLowerCase(), recoveryKeyData)
+                    onVaultUnlock(masterKey)
+                    setVaultAction(null)
+                    setRecoveryInput('')
+                  } catch {
+                    setVaultError('Invalid recovery phrase')
+                  }
+                  setVaultLoading(false)
+                }}
+              >
+                {vaultLoading ? 'Unlocking...' : 'Recover'}
+              </button>
+              <button className="settings-export-btn" onClick={() => { setVaultAction(null); setRecoveryInput(''); setVaultError('') }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Export */}
@@ -396,6 +467,49 @@ export default function SettingsView({ subscription, usage, user, devices, clips
             Export JSON
           </button>
         </div>
+      </div>
+
+      {/* Delete account */}
+      <div className="settings-section">
+        <h3 className="settings-section-title">Danger zone</h3>
+        {!deleteConfirm ? (
+          <button
+            className="settings-export-btn"
+            style={{ color: '#ef4444', borderColor: '#3a1a1a' }}
+            onClick={() => setDeleteConfirm(true)}
+          >
+            Delete my account
+          </button>
+        ) : (
+          <div className="settings-vault-form">
+            <p className="settings-toggle-desc" style={{ color: '#ef4444', marginBottom: '8px' }}>
+              This will permanently delete your account, all clips, all devices, and all data. This cannot be undone.
+            </p>
+            <div className="settings-vault-actions">
+              <button
+                className="settings-export-btn"
+                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                disabled={deleteLoading}
+                onClick={async () => {
+                  setDeleteLoading(true)
+                  try {
+                    await deleteAccount(user.id)
+                    localStorage.removeItem('snip_device_id')
+                    localStorage.removeItem('snip_auto_capture')
+                    window.location.reload()
+                  } catch {
+                    setDeleteLoading(false)
+                  }
+                }}
+              >
+                {deleteLoading ? 'Deleting...' : 'Yes, delete everything'}
+              </button>
+              <button className="settings-export-btn" onClick={() => setDeleteConfirm(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* App info */}
