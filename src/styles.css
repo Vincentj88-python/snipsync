@@ -1243,6 +1243,45 @@ textarea {
   color: #888;
 }
 
+/* Vault form */
+.settings-vault-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.settings-vault-input {
+  width: 100%;
+  background: #0e0e0e;
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #e5e5e5;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 150ms;
+}
+
+.settings-vault-input:focus {
+  border-color: #333;
+}
+
+.settings-vault-input::placeholder {
+  color: #444;
+}
+
+.settings-vault-error {
+  font-size: 11px;
+  color: #ef4444;
+}
+
+.settings-vault-actions {
+  display: flex;
+  gap: 6px;
+}
+
 /* Toggle switch */
 .settings-toggle-row {
   display: flex;

@@ -34,6 +34,11 @@ import SearchBar from './components/SearchBar'
 import Toast from './components/Toast'
 import SettingsView from './components/SettingsView'
 import { detectType, mapPlatform } from './lib/utils'
+import {
+  encryptClip,
+  decryptClip,
+  getEncryptionSettings,
+} from './lib/crypto'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -57,6 +62,9 @@ export default function App() {
   const [view, setView] = useState('clips') // 'clips' | 'settings'
   const [subscription, setSubscription] = useState(null)
   const [usage, setUsage] = useState({ clips: 0, devices: 0 })
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
+  const [vaultLocked, setVaultLocked] = useState(false)
+  const masterKeyRef = useRef(null)
   const [openAtLogin, setOpenAtLogin] = useState(true)
   const [autoCapture, setAutoCapture] = useState(() => {
     return localStorage.getItem('snip_auto_capture') === 'true'
@@ -195,8 +203,30 @@ export default function App() {
         }
         setDeviceId(storedDeviceId)
 
+        // Check encryption status
+        const encSettings = await getEncryptionSettings(user.id)
+        if (encSettings?.encryption_enabled) {
+          setEncryptionEnabled(true)
+          if (!masterKeyRef.current) {
+            setVaultLocked(true)
+          }
+        }
+
         const { data: clipsData } = await getClips(user.id)
-        if (clipsData) setClips(clipsData)
+        if (clipsData) {
+          // Decrypt clips if encryption is enabled and vault is unlocked
+          if (masterKeyRef.current) {
+            const decrypted = clipsData.map((clip) => {
+              if (clip.encrypted && clip.nonce && clip.content !== '[image]') {
+                return { ...clip, content: decryptClip(clip.content, clip.nonce, masterKeyRef.current) }
+              }
+              return clip
+            })
+            setClips(decrypted)
+          } else {
+            setClips(clipsData)
+          }
+        }
 
         const { data: devicesData } = await getDevices(user.id)
         if (devicesData) setDevices(devicesData)
@@ -220,9 +250,14 @@ export default function App() {
               .eq('id', newClip.id)
               .single()
             if (data) {
+              // Decrypt if encrypted and vault is unlocked
+              let clipData = data
+              if (data.encrypted && data.nonce && data.content !== '[image]' && masterKeyRef.current) {
+                clipData = { ...data, content: decryptClip(data.content, data.nonce, masterKeyRef.current) }
+              }
               setClips((prev) => {
-                if (prev.some((c) => c.id === data.id)) return prev
-                return [data, ...prev]
+                if (prev.some((c) => c.id === clipData.id)) return prev
+                return [clipData, ...prev]
               })
             }
           },
@@ -261,14 +296,32 @@ export default function App() {
 
     const type = detectType(text)
     setInput('')
-    const { error } = await addClip(user.id, deviceId, text, type)
+
+    // Encrypt if enabled and unlocked
+    let contentToSave = text
+    let clipEncrypted = false
+    let clipNonce = null
+    if (encryptionEnabled && masterKeyRef.current) {
+      const enc = encryptClip(text, masterKeyRef.current)
+      contentToSave = enc.encryptedContent
+      clipNonce = enc.nonce
+      clipEncrypted = true
+    }
+
+    const { data, error } = await addClip(user.id, deviceId, contentToSave, type)
     if (error) {
       setInput(text)
       setToast({ message: error.message, onDismiss: () => setToast(null) })
     } else {
+      // Mark as encrypted in DB if needed
+      if (clipEncrypted && data) {
+        await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
+        // Show decrypted content in local state
+        setClips((prev) => prev.map((c) => c.id === data.id ? { ...c, content: text, encrypted: true } : c))
+      }
       setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
     }
-  }, [input, user, deviceId, subscription, usage])
+  }, [input, user, deviceId, subscription, usage, encryptionEnabled])
 
   handleSendRef.current = handleSend
 
@@ -303,7 +356,13 @@ export default function App() {
       if (usg && usg.clips >= limits.maxClipsPerMonth) return
 
       const type = detectType(text)
-      const { error } = await addClip(u.id, d, text, type)
+      let contentToSave = text
+      if (masterKeyRef.current) {
+        const enc = encryptClip(text, masterKeyRef.current)
+        contentToSave = enc.encryptedContent
+        // Note: encrypted/nonce flags set separately for auto-captured clips
+      }
+      const { error } = await addClip(u.id, d, contentToSave, type)
       if (!error) {
         setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
       }
@@ -324,6 +383,42 @@ export default function App() {
     setOpenAtLogin(enabled)
     window.electronAPI?.setOpenAtLogin(enabled)
   }, [])
+
+  const handleVaultUnlock = useCallback((masterKey) => {
+    masterKeyRef.current = masterKey
+    setVaultLocked(false)
+    // Re-fetch and decrypt clips
+    if (user) {
+      getClips(user.id).then(({ data }) => {
+        if (data) {
+          const decrypted = data.map((clip) => {
+            if (clip.encrypted && clip.nonce && clip.content !== '[image]') {
+              return { ...clip, content: decryptClip(clip.content, clip.nonce, masterKey) }
+            }
+            return clip
+          })
+          setClips(decrypted)
+        }
+      })
+    }
+  }, [user])
+
+  const handleEncryptionChange = useCallback((enabled, masterKey) => {
+    setEncryptionEnabled(enabled)
+    if (enabled && masterKey) {
+      masterKeyRef.current = masterKey
+      setVaultLocked(false)
+    } else if (!enabled) {
+      masterKeyRef.current = null
+      setVaultLocked(false)
+      // Re-fetch plaintext clips
+      if (user) {
+        getClips(user.id).then(({ data }) => {
+          if (data) setClips(data)
+        })
+      }
+    }
+  }, [user])
 
   const handleImagePaste = useCallback(async (file) => {
     if (!user || !deviceId) return
@@ -565,6 +660,10 @@ export default function App() {
           clips={clips}
           autoCapture={autoCapture}
           onToggleAutoCapture={handleToggleAutoCapture}
+          encryptionEnabled={encryptionEnabled}
+          vaultLocked={vaultLocked}
+          onVaultUnlock={handleVaultUnlock}
+          onEncryptionChange={handleEncryptionChange}
           openAtLogin={openAtLogin}
           onToggleOpenAtLogin={handleToggleOpenAtLogin}
           onUpgrade={() => {
