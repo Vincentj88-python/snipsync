@@ -14,6 +14,19 @@ let lastClipboardHash = ''
 const isDev = !app.isPackaged
 const OAUTH_PORT = 54321
 
+// ── Single instance lock ────────────────────────────
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) toggleWindow()
+      mainWindow.focus()
+    }
+  })
+}
+
 // ── Sentry ──────────────────────────────────────────
 if (!isDev) {
   Sentry.init({
