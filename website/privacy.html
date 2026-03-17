@@ -65,7 +65,8 @@
             <li><strong>Row-level security (RLS)</strong> — database policies ensure you can only access your own clips and devices.</li>
             <li><strong>Infrastructure</strong> — hosted on AWS with SOC2 Type II compliance.</li>
           </ul>
-          <p>We do not currently offer end-to-end encryption of clip content at rest. Your clip data is readable by database administrators. We plan to add optional client-side encryption in a future release.</p>
+          <p>SnipSync offers optional <strong>end-to-end encryption</strong>. When enabled, your clip content is encrypted on your device using XSalsa20-Poly1305 (NaCl) before being transmitted to our servers. The encryption key is derived from a vault password that you set — this password is never sent to our servers. We cannot read, access, or recover your encrypted clips. Only you hold the decryption key.</p>
+          <p>If end-to-end encryption is not enabled, clip content is stored as readable text in the database. We recommend enabling encryption for sensitive content.</p>
         </section>
 
         <section>
