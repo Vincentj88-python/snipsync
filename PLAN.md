@@ -19,17 +19,18 @@ The fastest way to move information between devices and people.
 ### Free
 
 - 2 devices (includes browser extension)
-- 30 clips max
+- 30 clips/month (resets 1st, deleting doesn't restore counter)
 - 7-day history
-- Text clips only
+- Text clips only (no images or files)
 
 ### Pro ($3.99/mo or $29/yr)
 
 - Unlimited devices
 - Unlimited clips
 - Unlimited history
+- Image clips (up to 10MB)
+- File clips (up to 25MB, drag-and-drop)
 - Clipboard auto-capture
-- Image & file clips (via Supabase Storage)
 - Pinned clips & custom tags
 - Export (CSV/JSON)
 
@@ -77,7 +78,29 @@ All shipped in v0.2.0:
 - [x] Tray context menu (Open SnipSync, Quit)
 - [x] URL detection includes www. domains (not just http/https)
 
-### Phase 3: Browser Extension (v0.3.0) — IN PROGRESS
+### Phase 2.5: Production-Ready Overhaul — COMPLETE (v0.3.0)
+
+Shipped 2026-03-18:
+
+- [x] UI visual overhaul (text contrast, card polish, compact layout, type-colored borders)
+- [x] Settings scroll fix, hover-to-reveal actions, persistent search with `/` shortcut
+- [x] Sign-out moved to Settings, avatar removed from titlebar
+- [x] Persistent UUID device ID (replaces hardware fingerprint), legacy migration
+- [x] Account deletion via edge function (deletes profile + auth user + records deletion)
+- [x] Re-signup detection with warning toast
+- [x] Transactional emails via Resend (welcome, account-deleted, welcome-back)
+- [x] Encryption UX: password confirm, strength bar, show/hide toggle, recovery phrase chips
+- [x] Recovery phrase can decrypt + disable in one step, force-reset escape hatch
+- [x] Vault overlay on main screen when locked
+- [x] File clips: drag-and-drop, clip-files storage bucket, download button (Pro-only, up to 25MB)
+- [x] Image lightbox, right-click context menu, expandable clip content
+- [x] Enter to send, optimistic clip rendering, last synced time in footer
+- [x] Strict file size limits (Pro: 10MB images, 25MB files; Free: blocked)
+- [x] 3 new edge functions (record-deletion, check-deleted, send-email)
+- [x] Website updated with v0.3.0 features and pricing
+- [x] Mac DMG + Windows EXE built and pushed to GitHub Releases
+
+### Phase 3: Browser Extension — IN PROGRESS
 
 Goal: Expand reach — browser extension is zero-friction install, works on any OS
 
@@ -145,7 +168,7 @@ Tasks:
 
 - Mobile companion app (React Native) — read-only at first, then full sync
 - Global hotkey to summon SnipSync (Cmd+Shift+V or configurable)
-- ~~End-to-end encryption (client-side encrypt/decrypt, zero-knowledge)~~ — **DONE** (shipped 2026-03-17, moved up from Phase 5)
+- ~~End-to-end encryption~~ — **DONE** (shipped 2026-03-17, polished 2026-03-18 with password confirm, strength bar, recovery chips, vault overlay, force-reset)
 - API access for Pro/Team (programmatic clip creation)
 - Webhooks for Pro/Team (trigger external actions on new clips)
 
@@ -268,7 +291,9 @@ Tasks:
 | Clipboard monitoring | Electron main process | Can't access system clipboard from renderer |
 | List virtualization | react-window | Tiny bundle (6KB), proven, simple API |
 | Browser extension | Manifest V3 | Required for Chrome Web Store, works in Edge/Brave too |
-| E2E encryption | tweetnacl-js + Web Crypto PBKDF2 | Small, audited, no native deps. Shipped 2026-03-17. |
+| E2E encryption | tweetnacl-js + Web Crypto PBKDF2 | Small, audited, no native deps. Shipped 2026-03-17, polished 2026-03-18. |
+| Transactional email | Resend | Simple API, good deliverability, noreply@updates.snipsync.xyz |
+| Device identity | Persistent UUID in userData | Survives hardware changes, replaces fragile SHA-256 fingerprint |
 
 ## Payment Integration Notes (Lemon Squeezy)
 
@@ -317,32 +342,33 @@ Tasks:
 
 On the free plan, Supabase pauses the project after 1 week of no API calls. All users would see the app go dead. **Upgrade to Pro before any public launch.**
 
-## Current Status (as of 2026-03-17)
+## Current Status (as of 2026-03-18)
 
 ### What's live
-- Desktop app v0.2.0 (Mac + Windows) — GitHub Release published
-- E2E encryption shipped (tweetnacl, vault password, PBKDF2, 12-word recovery)
+- Desktop app v0.3.0 (Mac + Windows) — GitHub Release published
+- Production-ready UI with polished contrast, compact cards, hover actions
+- E2E encryption with full UX (confirm, strength bar, recovery chips, vault overlay, force-reset)
+- File clips (drag-and-drop, up to 25MB on Pro) + image clips (up to 10MB on Pro)
+- Transactional emails via Resend (welcome, deletion, welcome-back)
+- Account deletion with full cleanup (profile + auth user + abuse prevention record)
+- Persistent UUID device identity (with legacy migration)
 - Chrome extension working (loaded unpacked, OAuth via chrome.identity)
-- Monthly clip limit (30/month free, resets 1st)
-- Account deletion + ensureProfile auto-recreation
-- Website at snipsync.xyz with waitlist + encryption section — deployed on Vercel
-- GitHub repo is public: github.com/Vincentj88-python/snipsync
-- Vercel Analytics enabled
-- Sentry error reporting active (confirmed working)
+- Website at snipsync.xyz with waitlist — updated for v0.3.0
+- Sentry, Vercel Analytics, GitHub Actions all active
 - 27 tests passing
 
 ### Waiting on
-- Lemon Squeezy account approval (submitted, awaiting review)
-- Apple Developer account ($99/yr) — needed for Mac code signing / notarization
+- Lemon Squeezy account approval (need to record and send demo video)
+- Apple Developer account ($99/yr) — needed for Mac notarization
 - Google OAuth consent screen verification (100 user cap without it)
 - Supabase upgrade (must upgrade before 50 users — auto-pause risk on free plan)
 
 ### Next up
-- Fix settings scroll on Mac (priority #1 bug)
-- Test encryption end-to-end on both devices
-- Consider version bump to v0.3.0
-- Connect Lemon Squeezy once approved (plug in checkout URL + deploy webhook)
+- Record demo video for Lemon Squeezy
 - Submit Google OAuth for verification with privacy policy URL
+- Connect Lemon Squeezy once approved (plug in checkout URL)
+- Browser extension: right-click context menu, Chrome Web Store publish
+- Purchase Apple Developer account for notarization
 
 ## Launch Checklist (before each phase)
 

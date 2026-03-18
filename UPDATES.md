@@ -1,5 +1,115 @@
 # Cross-Snip Updates
 
+## v0.3.0 — Production-Ready Overhaul
+
+### UI/UX
+
+- **Text contrast overhaul** — All secondary/tertiary text colors bumped for WCAG AA compliance on dark backgrounds (#555→#8b8b8b, #444→#666, etc.)
+- **Card polish** — Subtle blue undertone (#121315), softer borders (#1f2024), type-colored 3px left border matching clip type (green for links, blue for code, cyan for files, etc.)
+- **Compact layout** — Reduced card padding (12→10px vertical), tighter margins (8→6px gap)
+- **Hover-to-reveal actions** — Copy/Pin/Delete buttons hidden by default, appear on hover
+- **Persistent search bar** — Always visible with search icon, `/` keyboard shortcut to focus, `Esc` to clear
+- **Right-click context menu** — Copy, Pin/Unpin, Open link, Delete actions on any clip
+- **Expandable content** — "Show more"/"Show less" toggle for clips exceeding max-height
+- **Image lightbox** — Click any image thumbnail to view full size in dark overlay
+- **Settings scroll fix** — Removed `height: 0` hack, using `flex: 1 1 0; min-height: 0; overflow-y: auto`
+- **Enhanced empty state** — Actionable "Settings" and "Quick tips" buttons
+- **Enter to send** — Plain Enter sends clips, Shift+Enter for newline (was Cmd+Enter)
+- **Optimistic rendering** — Clips appear in local state immediately after send, realtime deduplicates
+- **Last synced time** — Footer shows "Synced just now" / "Synced Xm ago"
+
+### Sign-Out & Titlebar
+
+- **Avatar removed** — Removed user initial avatar button from titlebar
+- **Sign-out in Settings** — New "Account" section in Settings with email display + "Sign out" button
+- **Gear icon only** — Titlebar right side: LIVE indicator, device badge, gear icon
+
+### Device Identity
+
+- **Persistent UUID** — Device ID now stored in `userData/device-id.txt` using `crypto.randomUUID()`. Survives hardware changes, OS upgrades, RAM swaps.
+- **Legacy migration** — On first launch with new UUID, checks for old SHA-256 hardware fingerprint match in Supabase and backfills with new UUID. Existing users seamlessly migrate.
+- **Preload API** — Added `getLegacyMachineId()` for one-time migration
+
+### Account Deletion & Abuse Prevention
+
+- **Full deletion via edge function** — `record-deletion` function handles everything with service role: records in `deleted_accounts`, deletes profile (cascades all data), deletes auth user
+- **Auth user cleanup** — Google OAuth no longer auto-signs back in after deletion
+- **deleted_accounts table** — Tracks email + machine_ids. RLS with no policies = service-role only access
+- **Re-signup detection** — `check-deleted` edge function called on sign-in. If found, shows warning toast + sends welcome-back email
+- **Profiles INSERT policy** — Added missing RLS INSERT policy on profiles table
+
+### Transactional Emails (Resend)
+
+- **3 email templates**: `welcome`, `account-deleted`, `welcome-back`
+- **Design**: Dark header with green "SNIPSYNC" wordmark, white card body, color-coded info boxes (green for welcome, red for deletion, amber for welcome-back), CTA buttons, footer with privacy/terms links
+- **send-email edge function**: Template-based, reusable for future templates
+- **Triggers**: Welcome on first profile creation, deletion email from record-deletion function, welcome-back when re-signing up after deletion
+
+### Encryption UX Polish
+
+- **Password confirmation** — "Confirm vault password" field on encryption setup
+- **Password strength indicator** — 4-segment bar (weak/fair/good/strong) based on length + character diversity
+- **Show/hide toggle** — Eye icon button on all password inputs
+- **Recovery phrase chips** — 12 words displayed as numbered chips in 3x4 grid with "Copy phrase" button
+- **Recovery + disable** — From the "Disable encryption" → "Forgot password?" flow, recovery phrase now decrypts all clips and disables encryption in one step
+- **Force reset** — When both password and phrase are lost: deletes all encrypted clips, wipes encryption keys, user starts clean
+- **Vault overlay** — When vault is locked, centered password input appears directly over the clip list area with Enter to unlock. "Forgot password? Go to Settings" link below.
+- **Better error handling** — Shows actual error messages instead of generic "Wrong password", validates empty password and missing settings
+
+### File Clips (Pro-only)
+
+- **Drag and drop** — Drag any file onto the input area. Green highlight + "Drop file here" on hover.
+- **Smart routing** — Images go to clip-images bucket, non-images go to clip-files bucket
+- **clip-files storage bucket** — New Supabase Storage bucket with RLS (users access own files only)
+- **File display** — Contextual icon by type (📄 PDF, 📊 spreadsheet, 📦 archive, 🎵 audio, 🎬 video, 💻 code, 📎 other), filename, file size, download button
+- **Download** — Signed URL opened in browser/shell
+- **Size limits** — Pro: images up to 10MB, files up to 25MB. Free: blocked with upgrade toast.
+- **Filter** — `image` and `file` filter buttons in FilterBar
+- **Type constraint** — `file` added to clips table check constraint
+- **Cleanup** — File storage cleaned up on clip deletion
+
+### Website Updates
+
+- Version badge: v0.3.0
+- Meta descriptions: mention images, files, encryption
+- Hero: "text, links, images, and files", use cases updated
+- Features bento: "Image & file clips" card replaces "Undo everything"
+- Encryption section: "12-word recovery phrase" replaces "No performance hit"
+- How it works: Enter to send, drag files
+- Pricing: split into "Image clips (up to 10MB)" and "File clips (up to 25MB)" under Pro
+- Mockup: "Snip" → "SnipSync", shortcut updated
+
+### Infrastructure
+
+- **4 edge functions**: ls-webhook, record-deletion, check-deleted, send-email
+- **Supabase migration**: `deleted_accounts` table
+- **Storage**: `clip-files` bucket with RLS policies
+- **Secrets**: `RESEND_API_KEY` set via Supabase CLI
+- **Version**: 0.2.0 → 0.3.0 (package.json + SettingsView)
+
+### Files Changed
+
+| File | What changed |
+|---|---|
+| `electron/main.js` | Persistent UUID device ID, legacy hash handler, fs import |
+| `electron/preload.js` | `getLegacyMachineId` exposed |
+| `package.json` | Version bump to 0.3.0 |
+| `src/App.jsx` | Avatar removed, vault overlay, lightbox, device migration, deleted account check, email triggers, file drop handler, optimistic rendering, Enter to send |
+| `src/components/ClipCard.jsx` | Type-colored left border, context menu, expandable content, file thumbnail, image lightbox click |
+| `src/components/FilterBar.jsx` | Added image + file filters, removed address + code |
+| `src/components/InputArea.jsx` | Drag-and-drop zone, Enter to send, onFileDrop prop |
+| `src/components/SearchBar.jsx` | Rewritten: always visible, / shortcut, Esc to clear, auto-focus on window focus |
+| `src/components/SettingsView.jsx` | Sign-out section, password confirm + strength bar, show/hide toggle, recovery chips, recover+disable, force-reset, v0.3.0 |
+| `src/lib/supabase.js` | File upload/download helpers, sendEmail, checkDeletedAccount, ensureProfile returns boolean, deleteAccount via edge function, plan limits with file sizes |
+| `src/styles.css` | Complete overhaul — contrast fixes, compact cards, hover actions, search bar, context menu, vault overlay, lightbox, empty state, password strength, recovery chips |
+| `website/index.html` | v0.3.0 version, updated features/pricing/descriptions/meta |
+| `supabase/functions/record-deletion/index.ts` | **New** — deletion recording + profile/auth cleanup + email |
+| `supabase/functions/check-deleted/index.ts` | **New** — re-signup detection |
+| `supabase/functions/send-email/index.ts` | **New** — template-based transactional emails via Resend |
+| `supabase/migrations/20260318000000_deleted_accounts.sql` | **New** — deleted_accounts table |
+
+---
+
 ## v0.2.0 — Audit, Bug Fixes & UI Polish
 
 ### Security & Stability
