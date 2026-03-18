@@ -1,6 +1,6 @@
 import React from 'react'
 
-const FILTERS = ['all', 'link', 'note', 'address', 'code']
+const FILTERS = ['all', 'link', 'note', 'image', 'file']
 
 export default function FilterBar({ filter, setFilter, clips, tags = [] }) {
   const getCount = (type) => {

@@ -7,7 +7,7 @@
 body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background: #0a0a0a;
-  color: #e5e5e5;
+  color: #f0f0f0;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -129,7 +129,7 @@ textarea {
   justify-content: center;
   height: 100vh;
   background: #0a0a0a;
-  color: #555;
+  color: #8b8b8b;
   font-size: 13px;
   gap: 10px;
 }
@@ -191,13 +191,13 @@ textarea {
 .signin-logo-text {
   font-size: 22px;
   font-weight: 600;
-  color: #e5e5e5;
+  color: #f0f0f0;
   letter-spacing: -0.02em;
 }
 
 .signin-subtitle {
   font-size: 13px;
-  color: #555;
+  color: #777;
   text-align: center;
   animation: fadeInUp 500ms ease forwards;
   animation-delay: 100ms;
@@ -206,8 +206,8 @@ textarea {
 
 .signin-btn {
   background: #1a1a1a;
-  color: #e5e5e5;
-  border: 1px solid #333;
+  color: #f0f0f0;
+  border: 1px solid #3a3a3e;
   border-radius: 8px;
   padding: 10px 24px;
   font-size: 13px;
@@ -236,7 +236,7 @@ textarea {
 
 .titlebar {
   background: #0a0a0a;
-  border-bottom: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1c1d20;
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -279,7 +279,7 @@ textarea {
 
 .titlebar-close-btn {
   background: transparent;
-  color: #555;
+  color: #8b8b8b;
   border: none;
   font-size: 14px;
   width: 24px;
@@ -294,7 +294,7 @@ textarea {
 
 .titlebar-close-btn:hover {
   background: #1e1e1e;
-  color: #e5e5e5;
+  color: #f0f0f0;
 }
 
 .titlebar-logo {
@@ -311,7 +311,7 @@ textarea {
 .titlebar-name {
   font-size: 13px;
   font-weight: 600;
-  color: #e5e5e5;
+  color: #f0f0f0;
   letter-spacing: -0.02em;
 }
 
@@ -339,42 +339,20 @@ textarea {
 
 .titlebar-live-label {
   font-size: 10px;
-  color: #444;
+  color: #666;
   letter-spacing: 0.03em;
 }
 
 .titlebar-device-badge {
   background: #161616;
-  border: 1px solid #222;
+  border: 1px solid #1f2024;
   border-radius: 5px;
   padding: 3px 8px;
   font-size: 10px;
-  color: #555;
+  color: #777;
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.titlebar-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #1e1e1e;
-  border: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  color: #888;
-  transition: all 200ms ease;
-  flex-shrink: 0;
-}
-
-.titlebar-avatar:hover {
-  background: #2a1515;
-  border-color: #ef4444;
-  color: #ef4444;
 }
 
 /* ========================================
@@ -383,19 +361,19 @@ textarea {
 
 .input-area {
   padding: 12px 14px;
-  border-bottom: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1c1d20;
 }
 
 .input-wrapper {
-  background: #111;
-  border: 1px solid #222;
+  background: #121315;
+  border: 1px solid #1f2024;
   border-radius: 10px;
   overflow: hidden;
   transition: border-color 150ms ease;
 }
 
 .input-wrapper:focus-within {
-  border-color: #333;
+  border-color: #3a3a3e;
 }
 
 .input-textarea {
@@ -404,7 +382,7 @@ textarea {
   border: none;
   padding: 11px 13px;
   font-size: 13px;
-  color: #d1d5db;
+  color: #e0e0e0;
   resize: none;
   font-family: 'DM Sans', sans-serif;
   line-height: 1.5;
@@ -421,7 +399,7 @@ textarea {
 
 .input-shortcut {
   font-size: 10px;
-  color: #333;
+  color: #555;
 }
 
 .input-send-btn {
@@ -440,7 +418,7 @@ textarea {
 
 .input-send-btn--inactive {
   background: #1a1a1a;
-  color: #333;
+  color: #555;
   font-weight: 400;
 }
 
@@ -458,7 +436,7 @@ textarea {
 
 .filter-bar {
   padding: 8px 14px;
-  border-bottom: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1c1d20;
   display: flex;
   gap: 4px;
   overflow-x: auto;
@@ -477,13 +455,13 @@ textarea {
 
 .filter-btn--active {
   background: #1e1e1e;
-  color: #e5e5e5;
+  color: #f0f0f0;
   border: 1px solid #2e2e2e;
 }
 
 .filter-btn--inactive {
   background: transparent;
-  color: #555;
+  color: #777;
   border: 1px solid transparent;
 }
 
@@ -501,7 +479,7 @@ textarea {
 }
 
 .filter-count {
-  color: #444;
+  color: #666;
   font-size: 10px;
   margin-left: 2px;
 }
@@ -511,52 +489,18 @@ textarea {
    ======================================== */
 
 .search-bar {
-  padding: 0 14px;
-  border-bottom: 1px solid #1e1e1e;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  transition: all 200ms ease;
-}
-
-.search-bar--collapsed {
-  height: 36px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
-.search-bar--expanded {
-  height: 36px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
-.search-toggle {
-  background: transparent;
-  border: none;
-  color: #555;
-  font-size: 14px;
-  width: 28px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  transition: all 150ms ease;
-  flex-shrink: 0;
-}
-
-.search-toggle:hover {
-  color: #888;
-  background: #1a1a1a;
-}
-
-.search-input-wrapper {
-  flex: 1;
+  padding: 6px 14px;
+  border-bottom: 1px solid #1c1d20;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: 6px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  color: #555;
+  flex-shrink: 0;
 }
 
 .search-input {
@@ -565,18 +509,29 @@ textarea {
   border: none;
   outline: none;
   font-size: 12px;
-  color: #d1d5db;
+  color: #e0e0e0;
   font-family: 'DM Sans', sans-serif;
 }
 
 .search-input::placeholder {
+  color: #555;
+}
+
+.search-shortcut {
+  font-size: 9px;
   color: #444;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
 }
 
 .search-clear {
   background: transparent;
   border: none;
-  color: #555;
+  color: #777;
   font-size: 12px;
   width: 20px;
   height: 20px;
@@ -586,6 +541,7 @@ textarea {
   border-radius: 4px;
   flex-shrink: 0;
   transition: all 150ms ease;
+  cursor: pointer;
 }
 
 .search-clear:hover {
@@ -598,18 +554,25 @@ textarea {
    ======================================== */
 
 .clip-card {
-  background: #111111;
-  border: 1px solid #222;
+  background: #121315;
+  border: 1px solid #1f2024;
+  border-left: 3px solid #1f2024;
   border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
   transition: all 150ms ease;
   animation: clipIn 250ms ease forwards;
 }
 
 .clip-card:hover {
-  border-color: #333;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.04);
+  border-color: #2a2a2e;
+}
+
+.clip-card:hover .clip-actions {
+  opacity: 1;
+  height: auto;
+  margin-top: 8px;
+  padding-top: 0;
 }
 
 .clip-card--removing {
@@ -644,7 +607,7 @@ textarea {
 
 .clip-time {
   font-size: 10px;
-  color: #444;
+  color: #666;
   flex: 1;
 }
 
@@ -656,7 +619,7 @@ textarea {
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 10px;
-  color: #555;
+  color: #777;
 }
 
 .clip-content-wrapper {
@@ -672,18 +635,18 @@ textarea {
   left: 0;
   right: 0;
   height: 20px;
-  background: linear-gradient(transparent, #111111);
+  background: linear-gradient(transparent, #121315);
   pointer-events: none;
 }
 
 .clip-content {
   font-size: 13px;
   word-break: break-all;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .clip-content--text {
-  color: #d1d5db;
+  color: #e0e0e0;
 }
 
 .clip-content--link {
@@ -718,13 +681,17 @@ textarea {
   background: #161616;
   border-radius: 6px;
   font-size: 11px;
-  color: #444;
+  color: #666;
 }
 
 .clip-actions {
   display: flex;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 0;
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  transition: opacity 150ms ease;
 }
 
 .clip-btn {
@@ -776,7 +743,7 @@ textarea {
 }
 
 .clip-btn--delete {
-  color: #555;
+  color: #777;
   padding: 5px 8px;
 }
 
@@ -794,7 +761,7 @@ textarea {
   flex: 1;
   padding: 10px 14px;
   overflow-y: auto;
-  max-height: 420px;
+  min-height: 0;
 }
 
 /* ========================================
@@ -803,18 +770,213 @@ textarea {
 
 .empty-state {
   text-align: center;
-  color: #444;
-  font-size: 12px;
-  padding: 40px 0;
+  color: #6b6b6b;
+  font-size: 13px;
+  padding: 48px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .empty-state-icon {
-  font-size: 24px;
-  opacity: 0.3;
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.empty-state-btn {
+  background: #1a1a1a;
+  color: #888;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  font-family: inherit;
+}
+
+.empty-state-btn:hover {
+  background: #222;
+  color: #ccc;
+  border-color: #444;
+}
+
+/* Clip expand toggle */
+.clip-expand-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 10px;
+  padding: 2px 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 150ms;
+}
+
+.clip-expand-btn:hover {
+  color: #999;
+}
+
+.clip-content-wrapper--expanded {
+  max-height: none;
+}
+
+.clip-content-wrapper--expanded::after {
+  display: none;
+}
+
+/* Image lightbox */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: fadeIn 150ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightbox-img {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Vault overlay */
+.vault-overlay {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px;
+  min-height: 0;
+}
+
+.vault-overlay-icon {
+  font-size: 28px;
+  opacity: 0.4;
+}
+
+.vault-overlay-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.vault-overlay-desc {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  max-width: 240px;
+}
+
+.vault-overlay-form {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.vault-overlay-input {
+  flex: 1;
+  background: #121315;
+  border: 1px solid #1f2024;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #f0f0f0;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 150ms;
+}
+
+.vault-overlay-input:focus {
+  border-color: #3a3a3e;
+}
+
+.vault-overlay-input::placeholder {
+  color: #555;
+}
+
+.vault-overlay-error {
+  font-size: 11px;
+  color: #ef4444;
+}
+
+.vault-overlay-link {
+  background: none;
+  border: none;
+  color: #22c55e;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+/* Context menu */
+.context-menu {
+  position: fixed;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 150;
+  min-width: 140px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  animation: fadeIn 100ms ease;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms;
+  text-align: left;
+}
+
+.context-menu-item:hover {
+  background: #252525;
+}
+
+.context-menu-item--danger {
+  color: #ef4444;
+}
+
+.context-menu-item--danger:hover {
+  background: #1a1212;
+}
+
+/* Footer sync time */
+.footer-sync {
+  font-size: 10px;
+  color: #555;
 }
 
 /* ========================================
@@ -822,7 +984,7 @@ textarea {
    ======================================== */
 
 .footer {
-  border-top: 1px solid #1e1e1e;
+  border-top: 1px solid #1c1d20;
   padding: 8px 14px;
   display: flex;
   justify-content: space-between;
@@ -844,11 +1006,11 @@ textarea {
 }
 
 .footer-device--online {
-  color: #555;
+  color: #777;
 }
 
 .footer-device--offline {
-  color: #333;
+  color: #444;
 }
 
 .footer-device-dot {
@@ -868,7 +1030,7 @@ textarea {
 
 .footer-count {
   font-size: 10px;
-  color: #555;
+  color: #777;
 }
 
 /* ========================================
@@ -971,7 +1133,7 @@ textarea {
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  color: #555;
+  color: #777;
   transition: all 200ms ease;
   flex-shrink: 0;
 }
@@ -992,18 +1154,18 @@ textarea {
    ======================================== */
 
 .settings-view {
-  overflow-y: scroll;
+  overflow-y: auto;
   padding: 14px 14px 80px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: 0;
   flex: 1 1 0;
+  min-height: 0;
 }
 
 .settings-section {
-  background: #111;
-  border: 1px solid #1e1e1e;
+  background: #121315;
+  border: 1px solid #1f2024;
   border-radius: 10px;
   padding: 14px;
 }
@@ -1020,7 +1182,7 @@ textarea {
 .settings-section-title {
   font-size: 11px;
   font-weight: 600;
-  color: #555;
+  color: #8b8b8b;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 10px;
@@ -1168,7 +1330,7 @@ textarea {
 .settings-price-amount {
   font-size: 22px;
   font-weight: 700;
-  color: #e5e5e5;
+  color: #f0f0f0;
 }
 
 .settings-price-period {
@@ -1178,7 +1340,7 @@ textarea {
 
 .settings-price-alt {
   font-size: 11px;
-  color: #444;
+  color: #666;
   margin-left: 8px;
 }
 
@@ -1224,20 +1386,20 @@ textarea {
 
 .settings-device-platform {
   font-size: 10px;
-  color: #555;
+  color: #777;
   text-transform: capitalize;
 }
 
 /* Footer links */
 .settings-app-version {
   font-size: 10px;
-  color: #333;
+  color: #555;
   font-family: 'DM Mono', monospace;
 }
 
 .settings-link {
   font-size: 10px;
-  color: #444;
+  color: #666;
   text-decoration: none;
   transition: color 150ms;
 }
@@ -1257,22 +1419,22 @@ textarea {
 .settings-vault-input {
   width: 100%;
   background: #0e0e0e;
-  border: 1px solid #222;
+  border: 1px solid #1f2024;
   border-radius: 8px;
   padding: 9px 12px;
   font-size: 12px;
-  color: #e5e5e5;
+  color: #f0f0f0;
   font-family: inherit;
   outline: none;
   transition: border-color 150ms;
 }
 
 .settings-vault-input:focus {
-  border-color: #333;
+  border-color: #3a3a3e;
 }
 
 .settings-vault-input::placeholder {
-  color: #444;
+  color: #555;
 }
 
 .settings-vault-error {
@@ -1283,6 +1445,53 @@ textarea {
 .settings-vault-actions {
   display: flex;
   gap: 6px;
+}
+
+/* Password strength bar */
+.password-strength {
+  display: flex;
+  gap: 3px;
+  height: 3px;
+}
+
+.password-strength-segment {
+  flex: 1;
+  border-radius: 2px;
+  background: #1e1e1e;
+  transition: background 200ms ease;
+}
+
+.password-strength-segment--weak { background: #ef4444; }
+.password-strength-segment--fair { background: #f59e0b; }
+.password-strength-segment--good { background: #22c55e; }
+.password-strength-segment--strong { background: #4ade80; }
+
+/* Recovery phrase chips */
+.recovery-phrase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.recovery-phrase-chip {
+  background: #111;
+  border: 1px solid #1f2024;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-size: 11px;
+  color: #e0e0e0;
+  text-align: left;
+}
+
+.recovery-phrase-chip-num {
+  color: #666;
+  margin-right: 4px;
+  font-size: 10px;
+}
+
+.recovery-phrase-copy {
+  margin-top: 4px;
 }
 
 /* Toggle switch */
@@ -1308,8 +1517,45 @@ textarea {
 
 .settings-toggle-desc {
   font-size: 10px;
-  color: #555;
+  color: #8b8b8b;
   line-height: 1.4;
+}
+
+/* Sign out section */
+.settings-signout-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-signout-email {
+  font-size: 12px;
+  color: #8b8b8b;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-signout-btn {
+  background: transparent;
+  color: #999;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.settings-signout-btn:hover {
+  background: #1a1a1a;
+  border-color: #444;
+  color: #ccc;
 }
 
 .settings-toggle {

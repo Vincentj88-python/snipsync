@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, clipboard } = require('electron')
 const crypto = require('crypto')
+const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const http = require('http')
@@ -225,8 +226,21 @@ function registerIpcHandlers() {
   })
 
   ipcMain.handle('get-machine-id', () => {
-    // Generate a stable machine fingerprint from hardware characteristics
-    // This survives app reinstalls, unlike localStorage
+    // Persistent UUID stored in userData — survives hardware changes
+    const idPath = path.join(app.getPath('userData'), 'device-id.txt')
+    try {
+      const existing = fs.readFileSync(idPath, 'utf-8').trim()
+      if (existing) return existing
+    } catch {
+      // File doesn't exist yet
+    }
+    const newId = crypto.randomUUID()
+    fs.writeFileSync(idPath, newId, 'utf-8')
+    return newId
+  })
+
+  ipcMain.handle('get-legacy-machine-id', () => {
+    // Old SHA-256 hardware fingerprint — used only for one-time migration
     const parts = [
       os.hostname(),
       os.platform(),

@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { getImageUrl } from '../lib/supabase'
+import { getImageUrl, getFileUrl } from '../lib/supabase'
 
 const TYPE_STYLES = {
-  link:    { bg: '#1a2e1a', text: '#4ade80', dot: '#22c55e' },
-  note:    { bg: '#1e1e2e', text: '#a78bfa', dot: '#8b5cf6' },
-  address: { bg: '#2e1a1a', text: '#f87171', dot: '#ef4444' },
-  code:    { bg: '#1a1e2e', text: '#60a5fa', dot: '#3b82f6' },
-  image:   { bg: '#2e2e1a', text: '#facc15', dot: '#eab308' },
-  other:   { bg: '#1e1e1e', text: '#9ca3af', dot: '#6b7280' },
+  link:    { bg: '#1a2e1a', text: '#4ade80', dot: '#22c55e', border: '#22c55e' },
+  note:    { bg: '#1e1e2e', text: '#a78bfa', dot: '#8b5cf6', border: '#8b5cf6' },
+  address: { bg: '#2e1a1a', text: '#f87171', dot: '#ef4444', border: '#ef4444' },
+  code:    { bg: '#1a1e2e', text: '#60a5fa', dot: '#3b82f6', border: '#3b82f6' },
+  image:   { bg: '#2e2e1a', text: '#facc15', dot: '#eab308', border: '#eab308' },
+  file:    { bg: '#1e2a2e', text: '#67e8f9', dot: '#06b6d4', border: '#06b6d4' },
+  other:   { bg: '#1e1e1e', text: '#9ca3af', dot: '#6b7280', border: '#6b7280' },
 }
 
-function ImageThumbnail({ imagePath }) {
+function ImageThumbnail({ imagePath, onLightbox }) {
   const [src, setSrc] = useState(null)
   const ref = useRef(null)
 
@@ -33,10 +34,82 @@ function ImageThumbnail({ imagePath }) {
   return (
     <div ref={ref} className="clip-image-wrapper">
       {src ? (
-        <img src={src} alt="Clip image" className="clip-image" loading="lazy" />
+        <img
+          src={src}
+          alt="Clip image"
+          className="clip-image"
+          loading="lazy"
+          onClick={() => onLightbox?.(src)}
+          style={{ cursor: 'pointer' }}
+        />
       ) : (
         <div className="clip-image-placeholder">Loading...</div>
       )}
+    </div>
+  )
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getFileIcon(filename) {
+  const ext = (filename || '').split('.').pop()?.toLowerCase()
+  if (['pdf'].includes(ext)) return '📄'
+  if (['doc', 'docx', 'txt', 'rtf', 'md'].includes(ext)) return '📝'
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊'
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '📦'
+  if (['mp3', 'wav', 'aac', 'flac', 'ogg'].includes(ext)) return '🎵'
+  if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return '🎬'
+  if (['js', 'ts', 'py', 'rb', 'go', 'rs', 'java', 'json', 'html', 'css'].includes(ext)) return '💻'
+  return '📎'
+}
+
+function FileThumbnail({ filePath, fileName, fileSize, onDownload }) {
+  const handleDownload = async () => {
+    const url = await getFileUrl(filePath)
+    if (url && onDownload) onDownload(url)
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      background: '#0e1012',
+      border: '1px solid #1f2024',
+      borderRadius: '8px',
+      padding: '10px 12px',
+      marginBottom: '2px',
+    }}>
+      <span style={{ fontSize: '22px', lineHeight: 1 }}>{getFileIcon(fileName)}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '12px', color: '#e0e0e0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {fileName}
+        </div>
+        <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
+          {formatFileSize(fileSize)}
+        </div>
+      </div>
+      <button
+        onClick={handleDownload}
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #2a2a2a',
+          borderRadius: '6px',
+          padding: '4px 10px',
+          fontSize: '11px',
+          color: '#888',
+          cursor: 'pointer',
+          flexShrink: 0,
+          fontFamily: 'inherit',
+        }}
+      >
+        ↓
+      </button>
     </div>
   )
 }
@@ -71,85 +144,156 @@ function timeAgo(timestamp) {
   return `${Math.floor(diff / 86400000)}d ago`
 }
 
-export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpenUrl, removing }) {
+function ContextMenu({ x, y, clip, onCopy, onPin, onDelete, onOpenUrl, onClose }) {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div ref={ref} className="context-menu" style={{ left: x, top: y }}>
+      <button className="context-menu-item" onClick={() => { onCopy(clip); onClose() }}>
+        Copy
+      </button>
+      <button className="context-menu-item" onClick={() => { onPin(clip.id, !clip.pinned); onClose() }}>
+        {clip.pinned ? 'Unpin' : 'Pin'}
+      </button>
+      {clip.type === 'link' && (
+        <button className="context-menu-item" onClick={() => { onOpenUrl(clip.content); onClose() }}>
+          Open link
+        </button>
+      )}
+      <button className="context-menu-item context-menu-item--danger" onClick={() => { onDelete(clip.id); onClose() }}>
+        Delete
+      </button>
+    </div>
+  )
+}
+
+export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpenUrl, removing, onLightbox, onDownloadFile }) {
   const typeStyle = TYPE_STYLES[clip.type] || TYPE_STYLES.other
   const isCopied = copied === clip.id
   const isLink = clip.type === 'link'
   const isCode = clip.type === 'code'
   const isImage = clip.type === 'image'
+  const isFile = clip.type === 'file'
   const deviceName = clip.devices?.name || 'Unknown'
   const devicePlatform = clip.devices?.platform || 'mac'
+  const [expanded, setExpanded] = useState(false)
+  const [contextMenu, setContextMenu] = useState(null)
+  const contentRef = useRef(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setIsOverflowing(contentRef.current.scrollHeight > 60)
+    }
+  }, [clip.content])
 
   const cardClass = `clip-card${removing ? ' clip-card--removing' : ''}`
 
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY })
+  }
+
   return (
-    <div className={cardClass}>
-      {/* Top row */}
-      <div className="clip-card-top">
-        <span
-          className="clip-type-badge"
-          style={{ background: typeStyle.bg, color: typeStyle.text }}
-        >
-          <span className="clip-type-dot" style={{ background: typeStyle.dot }} />
-          {clip.type}
-        </span>
-
-        {clip.pinned && (
-          <span className="clip-pin-indicator" title="Pinned">&#128204;</span>
-        )}
-
-        <span className="clip-time">{timeAgo(clip.created_at)}</span>
-
-        <span className="clip-device-badge">
-          <PlatformIcon platform={devicePlatform} />
-          {deviceName}
-        </span>
-      </div>
-
-      {/* Content */}
-      {isImage && clip.image_path ? (
-        <ImageThumbnail imagePath={clip.image_path} />
-      ) : (
-        <div className="clip-content-wrapper">
-          <div className={`clip-content ${isLink ? 'clip-content--link' : 'clip-content--text'} ${isCode ? 'clip-content--code' : ''}`}>
-            {clip.content}
-          </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="clip-actions">
-        <button
-          onClick={() => onCopy(clip)}
-          className={`clip-btn clip-btn--copy ${isCopied ? 'clip-btn--copied' : ''}`}
-        >
-          {isCopied ? '\u2713 Copied!' : 'Copy'}
-        </button>
-
-        <button
-          onClick={() => onPin(clip.id, !clip.pinned)}
-          className={`clip-btn clip-btn--pin ${clip.pinned ? 'clip-btn--pinned' : ''}`}
-        >
-          {clip.pinned ? 'Unpin' : 'Pin'}
-        </button>
-
-        {isLink && (
-          <button
-            onClick={() => onOpenUrl(clip.content)}
-            className="clip-btn"
+    <>
+      <div className={cardClass} style={{ borderLeftColor: typeStyle.border }} onContextMenu={handleContextMenu}>
+        {/* Top row */}
+        <div className="clip-card-top">
+          <span
+            className="clip-type-badge"
+            style={{ background: typeStyle.bg, color: typeStyle.text }}
           >
-            Open &#8599;
-          </button>
+            <span className="clip-type-dot" style={{ background: typeStyle.dot }} />
+            {clip.type}
+          </span>
+
+          {clip.pinned && (
+            <span className="clip-pin-indicator" title="Pinned">&#128204;</span>
+          )}
+
+          <span className="clip-time">{timeAgo(clip.created_at)}</span>
+
+          <span className="clip-device-badge">
+            <PlatformIcon platform={devicePlatform} />
+            {deviceName}
+          </span>
+        </div>
+
+        {/* Content */}
+        {isFile && clip.image_path ? (
+          <FileThumbnail filePath={clip.image_path} fileName={clip.content} fileSize={clip.image_size} onDownload={onDownloadFile} />
+        ) : isImage && clip.image_path ? (
+          <ImageThumbnail imagePath={clip.image_path} onLightbox={onLightbox} />
+        ) : (
+          <>
+            <div ref={contentRef} className={`clip-content-wrapper ${expanded ? 'clip-content-wrapper--expanded' : ''}`}>
+              <div className={`clip-content ${isLink ? 'clip-content--link' : 'clip-content--text'} ${isCode ? 'clip-content--code' : ''}`}>
+                {clip.content}
+              </div>
+            </div>
+            {isOverflowing && (
+              <button className="clip-expand-btn" onClick={() => setExpanded(!expanded)}>
+                {expanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </>
         )}
 
-        <button
-          onClick={() => onDelete(clip.id)}
-          className="clip-btn clip-btn--delete"
-        >
-          &#10005;
-        </button>
+        {/* Actions — visible on hover */}
+        <div className="clip-actions">
+          <button
+            onClick={() => onCopy(clip)}
+            className={`clip-btn clip-btn--copy ${isCopied ? 'clip-btn--copied' : ''}`}
+          >
+            {isCopied ? '\u2713 Copied!' : 'Copy'}
+          </button>
+
+          <button
+            onClick={() => onPin(clip.id, !clip.pinned)}
+            className={`clip-btn clip-btn--pin ${clip.pinned ? 'clip-btn--pinned' : ''}`}
+          >
+            {clip.pinned ? 'Unpin' : 'Pin'}
+          </button>
+
+          {isLink && (
+            <button
+              onClick={() => onOpenUrl(clip.content)}
+              className="clip-btn"
+            >
+              Open &#8599;
+            </button>
+          )}
+
+          <button
+            onClick={() => onDelete(clip.id)}
+            className="clip-btn clip-btn--delete"
+          >
+            &#10005;
+          </button>
+        </div>
       </div>
-    </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          clip={clip}
+          onCopy={onCopy}
+          onPin={onPin}
+          onDelete={onDelete}
+          onOpenUrl={onOpenUrl}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+    </>
   )
 }
 

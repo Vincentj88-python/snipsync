@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPlatform: () => ipcRenderer.invoke('get-platform'),
   getDeviceName: () => ipcRenderer.invoke('get-device-name'),
   getMachineId: () => ipcRenderer.invoke('get-machine-id'),
+  getLegacyMachineId: () => ipcRenderer.invoke('get-legacy-machine-id'),
   getLoginItemSettings: () => ipcRenderer.invoke('get-login-item-settings'),
   setOpenAtLogin: (enabled) => ipcRenderer.invoke('set-open-at-login', enabled),
   openUrl: (url) => ipcRenderer.invoke('open-url', url),

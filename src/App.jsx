@@ -26,7 +26,13 @@ import {
   addImageClip,
   deleteClipImage,
   getImageUrl,
+  uploadClipFile,
+  addFileClip,
+  deleteClipFile,
+  getFileUrl,
   ensureProfile,
+  checkDeletedAccount,
+  sendEmail,
 } from './lib/supabase'
 import ClipCard, { PlatformIcon } from './components/ClipCard'
 import InputArea from './components/InputArea'
@@ -39,6 +45,7 @@ import {
   encryptClip,
   decryptClip,
   getEncryptionSettings,
+  unlockMasterKey,
 } from './lib/crypto'
 
 export default function App() {
@@ -65,6 +72,10 @@ export default function App() {
   const [usage, setUsage] = useState({ clips: 0, devices: 0 })
   const [encryptionEnabled, setEncryptionEnabled] = useState(false)
   const [vaultLocked, setVaultLocked] = useState(false)
+  const [lightboxSrc, setLightboxSrc] = useState(null)
+  const [lastSyncedAt, setLastSyncedAt] = useState(null)
+  const [vaultOverlayPassword, setVaultOverlayPassword] = useState('')
+  const [vaultOverlayError, setVaultOverlayError] = useState('')
   const masterKeyRef = useRef(null)
   const [openAtLogin, setOpenAtLogin] = useState(true)
   const [autoCapture, setAutoCapture] = useState(() => {
@@ -146,7 +157,21 @@ export default function App() {
     const setup = async () => {
       try {
         // Ensure profile exists (handles re-login after account deletion)
-        await ensureProfile(user)
+        const isNewProfile = await ensureProfile(user)
+
+        // Check if this account was previously deleted
+        if (user.email) {
+          const wasDeleted = await checkDeletedAccount(user.email)
+          if (wasDeleted) {
+            setToast({
+              message: 'Welcome back! Your previous account data was deleted and cannot be restored.',
+              onDismiss: () => setToast(null),
+            })
+            if (isNewProfile) sendEmail(user.email, 'welcome-back')
+          } else if (isNewProfile) {
+            sendEmail(user.email, 'welcome')
+          }
+        }
 
         let storedDeviceId = localStorage.getItem('snip_device_id')
 
@@ -168,14 +193,26 @@ export default function App() {
           const name = deviceName || 'Unknown Device'
           const plat = mapPlatform(platform)
 
-          // 1. Look up by machine fingerprint — survives reinstalls
+          // 1. Look up by new persistent UUID
           let existingDevice = await findDeviceByMachineId(user.id, machineId)
 
-          // 2. Fallback: match legacy device by name+platform (no machine_id yet)
+          // 2. Try legacy hardware-hash based machine ID (one-time migration)
+          if (!existingDevice && window.electronAPI?.getLegacyMachineId) {
+            const legacyMachineId = await window.electronAPI.getLegacyMachineId()
+            if (legacyMachineId && legacyMachineId !== machineId) {
+              const legacyDevice = await findDeviceByMachineId(user.id, legacyMachineId)
+              if (legacyDevice) {
+                // Migrate: backfill with new persistent UUID
+                await backfillMachineId(legacyDevice.id, machineId)
+                existingDevice = legacyDevice
+              }
+            }
+          }
+
+          // 3. Fallback: match legacy device by name+platform (no machine_id yet)
           if (!existingDevice) {
             const legacyDevice = await findDeviceByName(user.id, name, plat)
             if (legacyDevice) {
-              // Backfill machine_id on the legacy device
               await backfillMachineId(legacyDevice.id, machineId)
               existingDevice = legacyDevice
             }
@@ -263,6 +300,7 @@ export default function App() {
                 if (prev.some((c) => c.id === clipData.id)) return prev
                 return [clipData, ...prev]
               })
+              setLastSyncedAt(new Date())
             }
           },
           (deletedId) => {
@@ -316,14 +354,19 @@ export default function App() {
     if (error) {
       setInput(text)
       setToast({ message: error.message, onDismiss: () => setToast(null) })
-    } else {
+    } else if (data) {
+      // Optimistically add clip to local state immediately
+      const displayClip = clipEncrypted ? { ...data, content: text, encrypted: true } : data
+      setClips((prev) => {
+        if (prev.some((c) => c.id === data.id)) return prev
+        return [displayClip, ...prev]
+      })
       // Mark as encrypted in DB if needed
-      if (clipEncrypted && data) {
+      if (clipEncrypted) {
         await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
-        // Show decrypted content in local state
-        setClips((prev) => prev.map((c) => c.id === data.id ? { ...c, content: text, encrypted: true } : c))
       }
       setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
+      setLastSyncedAt(new Date())
     }
   }, [input, user, deviceId, subscription, usage, encryptionEnabled])
 
@@ -331,8 +374,7 @@ export default function App() {
 
   useEffect(() => {
     const handler = (e) => {
-      const isMod = platform === 'darwin' ? e.metaKey : e.ctrlKey
-      if (isMod && e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey && document.activeElement?.classList?.contains('input-textarea')) {
         e.preventDefault()
         handleSendRef.current?.()
       }
@@ -427,13 +469,18 @@ export default function App() {
   const handleImagePaste = useCallback(async (file) => {
     if (!user || !deviceId) return
     const plan = subscription?.plan || 'free'
+    const limits = PLAN_LIMITS[plan]
     if (plan === 'free') {
       setToast({ message: 'Image clips are a Pro feature. Upgrade to upload images.', onDismiss: () => setToast(null) })
       return
     }
-    const limits = PLAN_LIMITS[plan]
     if (usage.clips >= limits.maxClipsPerMonth) {
       setToast({ message: `Monthly clip limit reached (${limits.maxClipsPerMonth}/month). Upgrade to Pro.`, onDismiss: () => setToast(null) })
+      return
+    }
+    if (file.size > limits.maxImageSize) {
+      const maxMB = Math.round(limits.maxImageSize / (1024 * 1024))
+      setToast({ message: `Image too large (max ${maxMB}MB).`, onDismiss: () => setToast(null) })
       return
     }
     const { data: uploadData, error: uploadError } = await uploadClipImage(user.id, file)
@@ -441,13 +488,61 @@ export default function App() {
       setToast({ message: uploadError.message, onDismiss: () => setToast(null) })
       return
     }
-    const { error } = await addImageClip(user.id, deviceId, uploadData.path, file.size)
+    const { data, error } = await addImageClip(user.id, deviceId, uploadData.path, file.size)
     if (error) {
       setToast({ message: 'Failed to save image clip', onDismiss: () => setToast(null) })
-    } else {
+    } else if (data) {
+      setClips((prev) => {
+        if (prev.some((c) => c.id === data.id)) return prev
+        return [data, ...prev]
+      })
       setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
+      setLastSyncedAt(new Date())
     }
   }, [user, deviceId, subscription, usage])
+
+  const handleFileDrop = useCallback(async (file) => {
+    if (!user || !deviceId) return
+    const plan = subscription?.plan || 'free'
+    const limits = PLAN_LIMITS[plan]
+    if (limits.maxFileSize === 0) {
+      setToast({ message: 'File clips are a Pro feature. Upgrade to upload files.', onDismiss: () => setToast(null) })
+      return
+    }
+    if (usage.clips >= limits.maxClipsPerMonth) {
+      setToast({ message: `Monthly clip limit reached (${limits.maxClipsPerMonth}/month). Upgrade to Pro.`, onDismiss: () => setToast(null) })
+      return
+    }
+    if (file.size > limits.maxFileSize) {
+      const maxMB = Math.round(limits.maxFileSize / (1024 * 1024))
+      setToast({ message: `File too large (max ${maxMB}MB). Current plan allows up to ${maxMB}MB.`, onDismiss: () => setToast(null) })
+      return
+    }
+    const { data: uploadData, error: uploadError } = await uploadClipFile(user.id, file)
+    if (uploadError) {
+      setToast({ message: uploadError.message, onDismiss: () => setToast(null) })
+      return
+    }
+    const { data, error } = await addFileClip(user.id, deviceId, uploadData.path, file.name, file.size)
+    if (error) {
+      setToast({ message: error.message || 'Failed to save file clip', onDismiss: () => setToast(null) })
+    } else if (data) {
+      setClips((prev) => {
+        if (prev.some((c) => c.id === data.id)) return prev
+        return [data, ...prev]
+      })
+      setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
+      setLastSyncedAt(new Date())
+    }
+  }, [user, deviceId, subscription, usage])
+
+  const handleDownloadFile = useCallback((url) => {
+    if (window.electronAPI) {
+      window.electronAPI.openUrl(url)
+    } else {
+      window.open(url, '_blank')
+    }
+  }, [])
 
   const handleCopy = useCallback((clip) => {
     navigator.clipboard.writeText(clip.content)
@@ -471,7 +566,11 @@ export default function App() {
       // Show toast and delay actual deletion
       const timeoutId = setTimeout(async () => {
         if (clipToDelete.image_path) {
-          await deleteClipImage(clipToDelete.image_path)
+          if (clipToDelete.type === 'file') {
+            await deleteClipFile(clipToDelete.image_path)
+          } else {
+            await deleteClipImage(clipToDelete.image_path)
+          }
         }
         await deleteClip(id)
         setUsage((prev) => ({ ...prev, clips: Math.max(0, prev.clips - 1) }))
@@ -566,7 +665,6 @@ export default function App() {
     })
 
   const currentDevicePlatform = mapPlatform(platform)
-  const userInitial = user?.email?.[0]?.toUpperCase() || '?'
 
   // Loading screen
   if (loading) {
@@ -647,11 +745,6 @@ export default function App() {
           >
             &#9881;
           </button>
-
-          {/* Sign-out avatar */}
-          <button className="titlebar-avatar" onClick={handleSignOut} title="Sign out">
-            {userInitial}
-          </button>
         </div>
       </div>
 
@@ -670,6 +763,7 @@ export default function App() {
           onEncryptionChange={handleEncryptionChange}
           openAtLogin={openAtLogin}
           onToggleOpenAtLogin={handleToggleOpenAtLogin}
+          onSignOut={handleSignOut}
           onUpgrade={() => {
             const checkoutUrl = import.meta.env.VITE_LS_CHECKOUT_URL
             if (checkoutUrl) {
@@ -684,6 +778,56 @@ export default function App() {
             }
           }}
         />
+      ) : encryptionEnabled && vaultLocked && view === 'clips' ? (
+        /* Vault locked overlay */
+        <div className="vault-overlay">
+          <div className="vault-overlay-icon">&#128274;</div>
+          <span className="vault-overlay-title">Vault locked</span>
+          <span className="vault-overlay-desc">Enter your vault password to decrypt and view your clips.</span>
+          <div className="vault-overlay-form">
+            <input
+              type="password"
+              className="vault-overlay-input"
+              placeholder="Vault password"
+              value={vaultOverlayPassword}
+              onChange={(e) => { setVaultOverlayPassword(e.target.value); setVaultOverlayError('') }}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && vaultOverlayPassword) {
+                  try {
+                    const settings = await getEncryptionSettings(user.id)
+                    const masterKey = await unlockMasterKey(vaultOverlayPassword, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+                    handleVaultUnlock(masterKey)
+                    setVaultOverlayPassword('')
+                  } catch {
+                    setVaultOverlayError('Wrong password')
+                  }
+                }
+              }}
+              autoFocus
+            />
+            <button
+              className="input-send-btn input-send-btn--active"
+              style={{ padding: '8px 14px' }}
+              onClick={async () => {
+                if (!vaultOverlayPassword) return
+                try {
+                  const settings = await getEncryptionSettings(user.id)
+                  const masterKey = await unlockMasterKey(vaultOverlayPassword, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+                  handleVaultUnlock(masterKey)
+                  setVaultOverlayPassword('')
+                } catch {
+                  setVaultOverlayError('Wrong password')
+                }
+              }}
+            >
+              Unlock
+            </button>
+          </div>
+          {vaultOverlayError && <span className="vault-overlay-error">{vaultOverlayError}</span>}
+          <button className="vault-overlay-link" onClick={() => setView('settings')}>
+            Forgot password? Go to Settings
+          </button>
+        </div>
       ) : (
         <>
           {/* Input */}
@@ -692,6 +836,7 @@ export default function App() {
             setInput={setInput}
             onSend={handleSend}
             onImagePaste={handleImagePaste}
+            onFileDrop={handleFileDrop}
             platform={platform}
           />
 
@@ -714,11 +859,24 @@ export default function App() {
             {filteredClips.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-state-icon">&#128203;</div>
-                {clips.length === 0
-                  ? 'No clips yet. Paste something above!'
-                  : searchQuery
-                    ? 'No clips match your search.'
-                    : `No ${filter} clips found.`
+                {clips.length === 0 ? (
+                  <>
+                    Your clipboard is empty. Copy something on any device to see it here.
+                    <div className="empty-state-actions">
+                      <button className="empty-state-btn" onClick={() => setView('settings')}>
+                        Settings
+                      </button>
+                      <button className="empty-state-btn" onClick={() => {
+                        const text = platform === 'darwin' ? '\u2318\u21B5 to send' : 'Ctrl+\u21B5 to send'
+                        setToast({ message: `Type above and press ${text}. Or just copy something — it syncs!`, onDismiss: () => setToast(null) })
+                      }}>
+                        Quick tips
+                      </button>
+                    </div>
+                  </>
+                ) : searchQuery
+                  ? 'No clips match your search.'
+                  : `No ${filter} clips found.`
                 }
               </div>
             ) : (
@@ -732,6 +890,8 @@ export default function App() {
                   onDelete={handleDelete}
                   onOpenUrl={handleOpenUrl}
                   removing={removingId === clip.id}
+                  onLightbox={setLightboxSrc}
+                  onDownloadFile={handleDownloadFile}
                 />
               ))
             )}
@@ -767,10 +927,20 @@ export default function App() {
           })}
         </div>
 
-        <span className="footer-count">
-          {clips.length} clip{clips.length !== 1 ? 's' : ''}
+        <span className="footer-sync">
+          {lastSyncedAt
+            ? `Synced ${Math.floor((Date.now() - lastSyncedAt.getTime()) / 1000) < 5 ? 'just now' : Math.floor((Date.now() - lastSyncedAt.getTime()) / 60000) + 'm ago'}`
+            : `${clips.length} clip${clips.length !== 1 ? 's' : ''}`
+          }
         </span>
       </div>
+
+      {/* Image lightbox */}
+      {lightboxSrc && (
+        <div className="lightbox-overlay" onClick={() => setLightboxSrc(null)}>
+          <img src={lightboxSrc} alt="Full size" className="lightbox-img" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
