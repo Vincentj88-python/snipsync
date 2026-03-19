@@ -6,20 +6,20 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 async function verifySignature(payload: string, signature: string): Promise<boolean> {
-  if (!WEBHOOK_SECRET) return false
+  if (!WEBHOOK_SECRET || !signature) return false
   const encoder = new TextEncoder()
   const key = await crypto.subtle.importKey(
     'raw',
     encoder.encode(WEBHOOK_SECRET),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign']
+    ['sign', 'verify']
   )
-  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
-  const digest = Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-  return digest === signature
+  // Use crypto.subtle.verify for constant-time comparison
+  const signatureBytes = new Uint8Array(
+    (signature.match(/.{1,2}/g) || []).map((b) => parseInt(b, 16))
+  )
+  return crypto.subtle.verify('HMAC', key, signatureBytes, encoder.encode(payload))
 }
 
 serve(async (req) => {

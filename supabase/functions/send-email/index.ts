@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -111,11 +112,49 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authorization: accept user JWT or service-role key
+    const authHeader = req.headers.get('authorization')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`
+
+    let authUserEmail: string | null = null
+
+    if (!isServiceRole) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        serviceRoleKey,
+      )
+      const { data: { user }, error: authError } = await supabase.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      )
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      authUserEmail = user.email || null
+    }
+
     const { to, template, data } = await req.json()
 
     if (!to || !template) {
       return new Response(JSON.stringify({ error: 'to and template required' }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Users can only send emails to their own address
+    if (!isServiceRole && authUserEmail !== to) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -143,8 +182,9 @@ serve(async (req) => {
     const result = await res.json()
 
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: result }), {
-        status: res.status,
+      console.error('[send-email] Resend error:', JSON.stringify(result))
+      return new Response(JSON.stringify({ error: 'Failed to send email' }), {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -153,7 +193,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('[send-email]', err.message)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

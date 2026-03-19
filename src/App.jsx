@@ -76,6 +76,8 @@ export default function App() {
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
   const [vaultOverlayPassword, setVaultOverlayPassword] = useState('')
   const [vaultOverlayError, setVaultOverlayError] = useState('')
+  const [vaultUnlockDisabled, setVaultUnlockDisabled] = useState(false)
+  const vaultFailCountRef = useRef(0)
   const masterKeyRef = useRef(null)
   const [openAtLogin, setOpenAtLogin] = useState(true)
   const [autoCapture, setAutoCapture] = useState(() => {
@@ -107,6 +109,38 @@ export default function App() {
     }
     init()
   }, [])
+
+  // Clear master key on page unload + auto-lock vault after 30min inactivity
+  useEffect(() => {
+    const clearMasterKey = () => {
+      if (masterKeyRef.current && masterKeyRef.current instanceof Uint8Array) {
+        masterKeyRef.current.fill(0)
+      }
+      masterKeyRef.current = null
+    }
+    window.addEventListener('beforeunload', clearMasterKey)
+
+    let autoLockTimer = null
+    const resetAutoLock = () => {
+      if (autoLockTimer) clearTimeout(autoLockTimer)
+      autoLockTimer = setTimeout(() => {
+        if (masterKeyRef.current && encryptionEnabled) {
+          clearMasterKey()
+          setVaultLocked(true)
+        }
+      }, 30 * 60 * 1000) // 30 minutes
+    }
+    window.addEventListener('mousemove', resetAutoLock)
+    window.addEventListener('keydown', resetAutoLock)
+    resetAutoLock()
+
+    return () => {
+      window.removeEventListener('beforeunload', clearMasterKey)
+      window.removeEventListener('mousemove', resetAutoLock)
+      window.removeEventListener('keydown', resetAutoLock)
+      if (autoLockTimer) clearTimeout(autoLockTimer)
+    }
+  }, [encryptionEnabled])
 
   // Auth listener
   useEffect(() => {
@@ -536,13 +570,23 @@ export default function App() {
     }
   }, [user, deviceId, subscription, usage])
 
-  const handleDownloadFile = useCallback((url) => {
-    if (window.electronAPI) {
-      window.electronAPI.openUrl(url)
-    } else {
-      window.open(url, '_blank')
+  const openUrlSafely = useCallback((url) => {
+    try {
+      const parsed = new URL(url)
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return
+      if (window.electronAPI) {
+        window.electronAPI.openUrl(url)
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer')
+      }
+    } catch {
+      // Invalid URL — ignore
     }
   }, [])
+
+  const handleDownloadFile = useCallback((url) => {
+    openUrlSafely(url)
+  }, [openUrlSafely])
 
   const handleCopy = useCallback((clip) => {
     navigator.clipboard.writeText(clip.content)
@@ -620,21 +664,24 @@ export default function App() {
   }, [])
 
   const handleOpenUrl = useCallback((url) => {
-    if (window.electronAPI) {
-      window.electronAPI.openUrl(url)
-    } else {
-      window.open(url, '_blank')
-    }
-  }, [])
+    openUrlSafely(url)
+  }, [openUrlSafely])
 
   const handleSignOut = useCallback(async () => {
     if (unsubRef.current) unsubRef.current()
+    // Securely clear master key from memory
+    if (masterKeyRef.current && masterKeyRef.current instanceof Uint8Array) {
+      masterKeyRef.current.fill(0)
+    }
+    masterKeyRef.current = null
     localStorage.removeItem('snip_device_id')
     setClips([])
     setDevices([])
     setDeviceId(null)
     setFilter('all')
     setSearchQuery('')
+    setEncryptionEnabled(false)
+    setVaultLocked(false)
     await signOut()
   }, [])
 
@@ -768,11 +815,7 @@ export default function App() {
             const checkoutUrl = import.meta.env.VITE_LS_CHECKOUT_URL
             if (checkoutUrl) {
               const url = `${checkoutUrl}?checkout[email]=${encodeURIComponent(user.email)}&checkout[custom][user_id]=${user.id}`
-              if (window.electronAPI) {
-                window.electronAPI.openUrl(url)
-              } else {
-                window.open(url, '_blank')
-              }
+              openUrlSafely(url)
             } else {
               setToast({ message: 'Upgrade not available yet', onDismiss: () => setToast(null) })
             }
@@ -792,14 +835,19 @@ export default function App() {
               value={vaultOverlayPassword}
               onChange={(e) => { setVaultOverlayPassword(e.target.value); setVaultOverlayError('') }}
               onKeyDown={async (e) => {
-                if (e.key === 'Enter' && vaultOverlayPassword) {
+                if (e.key === 'Enter' && vaultOverlayPassword && !vaultUnlockDisabled) {
                   try {
                     const settings = await getEncryptionSettings(user.id)
                     const masterKey = await unlockMasterKey(vaultOverlayPassword, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+                    vaultFailCountRef.current = 0
                     handleVaultUnlock(masterKey)
                     setVaultOverlayPassword('')
                   } catch {
-                    setVaultOverlayError('Wrong password')
+                    vaultFailCountRef.current++
+                    const delay = Math.min(vaultFailCountRef.current * 2, 30) // 2s, 4s, 6s... max 30s
+                    setVaultOverlayError(`Wrong password. Try again in ${delay}s.`)
+                    setVaultUnlockDisabled(true)
+                    setTimeout(() => setVaultUnlockDisabled(false), delay * 1000)
                   }
                 }
               }}
@@ -808,15 +856,21 @@ export default function App() {
             <button
               className="input-send-btn input-send-btn--active"
               style={{ padding: '8px 14px' }}
+              disabled={vaultUnlockDisabled}
               onClick={async () => {
-                if (!vaultOverlayPassword) return
+                if (!vaultOverlayPassword || vaultUnlockDisabled) return
                 try {
                   const settings = await getEncryptionSettings(user.id)
                   const masterKey = await unlockMasterKey(vaultOverlayPassword, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+                  vaultFailCountRef.current = 0
                   handleVaultUnlock(masterKey)
                   setVaultOverlayPassword('')
                 } catch {
-                  setVaultOverlayError('Wrong password')
+                  vaultFailCountRef.current++
+                  const delay = Math.min(vaultFailCountRef.current * 2, 30)
+                  setVaultOverlayError(`Wrong password. Try again in ${delay}s.`)
+                  setVaultUnlockDisabled(true)
+                  setTimeout(() => setVaultUnlockDisabled(false), delay * 1000)
                 }
               }}
             >

@@ -11,6 +11,7 @@ let tray = null
 let mainWindow = null
 let clipboardWatcher = null
 let lastClipboardHash = ''
+let oauthState = null
 
 const isDev = !app.isPackaged
 const OAUTH_PORT = 54321
@@ -68,8 +69,14 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
     },
   })
+
+  // Deny all permission requests (camera, mic, geolocation, etc.)
+  mainWindow.webContents.session.setPermissionRequestHandler((_wc, _perm, callback) => callback(false))
+  mainWindow.webContents.session.setPermissionCheckHandler(() => false)
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
@@ -161,11 +168,14 @@ function startOAuthServer() {
   const params = new URLSearchParams(hash);
   const access_token = params.get('access_token');
   const refresh_token = params.get('refresh_token');
+  // Extract state from URL query string for CSRF validation
+  const query = new URLSearchParams(window.location.search);
+  const state = query.get('state') || params.get('state') || '';
   if (access_token) {
     fetch('/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token, refresh_token })
+      body: JSON.stringify({ access_token, refresh_token, state })
     }).then(() => {
       document.body.innerHTML = '<div style="text-align:center"><p style="color:#22c55e">Signed in! You can close this tab.</p></div>';
     });
@@ -179,14 +189,24 @@ function startOAuthServer() {
         let body = ''
         req.on('data', (chunk) => { body += chunk })
         req.on('end', () => {
-          res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end('{"ok":true}')
           try {
             const tokens = JSON.parse(body)
+            // Validate CSRF state token
+            if (oauthState && tokens.state !== oauthState) {
+              res.writeHead(403, { 'Content-Type': 'application/json' })
+              res.end('{"error":"Invalid state"}')
+              return
+            }
+            oauthState = null // Single-use
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end('{"ok":true}')
             if (mainWindow && tokens.access_token) {
               mainWindow.webContents.send('auth-tokens', tokens)
             }
-          } catch {}
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' })
+            res.end('{"error":"Invalid body"}')
+          }
           // Close server after receiving tokens
           setTimeout(() => {
             server.close()
@@ -266,8 +286,12 @@ function registerIpcHandlers() {
 
   ipcMain.handle('start-oauth', async (_event, url) => {
     try {
+      // Generate CSRF state token and append to OAuth URL
+      oauthState = crypto.randomBytes(32).toString('hex')
+      const separator = url.includes('?') ? '&' : '?'
+      const urlWithState = `${url}${separator}state=${oauthState}`
       await startOAuthServer()
-      shell.openExternal(url)
+      shell.openExternal(urlWithState)
     } catch {
       // Server failed to start — try opening URL directly
       shell.openExternal(url)

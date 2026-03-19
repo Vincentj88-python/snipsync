@@ -10,7 +10,7 @@ async function deriveKey(password, salt) {
     'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
   )
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
     keyMaterial,
     256
   )
@@ -63,6 +63,31 @@ const WORDLIST = [
   'shadow','temple','voyage','whisper','arctic','beacon','cipher','dagger',
   'fossil','garnet','horizon','impulse','jewel','kindle','lunar','meadow',
   'nebula','oasis','phantom','ripple','summit','trident','vertex','wander',
+  // Extended wordlist for stronger entropy (256 words = 8 bits per word)
+  'alpine','bamboo','canyon','delta','flint','flora','grove','haven',
+  'inlet','jade','kayak','lemon','mango','north','olive','pebble',
+  'quest','ridge','solar','thorn','unity','vivid','willow','yield',
+  'alloy','bloom','cedar','drift','epoch','flame','glint','haste',
+  'index','joust','kneel','latch','mirth','noble','onyx','plume',
+  'quota','realm','slope','tulip','ultra','vault','wheat','axiom',
+  'badge','coral','dream','elite','frost','gleam','heron','linen',
+  'jolly','karma','lever','mural','nexus','optic','pearl','quiet',
+  'roost','spire','token','upper','vigor','wedge','xenon','youth',
+  'agave','blaze','crane','depot','envoy','fjord','grain','hyper',
+  'igloo','jerky','kiosk','lyric','mocha','nylon','oxide','plaza',
+  'quirk','radar','shrub','topaz','usher','viral','wreck','yacht',
+  'adorn','brisk','cloak','dwell','exert','forge','grail','hatch',
+  'ionic','jetty','knack','lodge','magma','nerve','orbit','prowl',
+  'quilt','rapid','stoke','tunic','unify','venom','whisk','amber',
+  'birch','clamp','drake','elbow','fetch','grasp','hover','irony',
+  'juicy','knelt','limbo','morse','notch','omega','patch','reign',
+  'satin','trout','usurp','vista','world','yearn','zebra','apron',
+  'brace','charm','dwarf','equip','flask','glyph','hound','slate',
+  'crisp','knoll','lucid','marsh','noted','plank','pinch','query',
+  'rivet','sworn','thyme','crest','vouch','wrath','focal','zonal',
+  'anvil','bison','chimp','drape','easel','furry','globe','husky',
+  'idyll','jazzy','karat','lotus','moose','niche','otter','plaid',
+  'quail','relic','skunk','talon','valve','visor','waltz','yucca',
 ]
 
 function generateRecoveryPhrase() {

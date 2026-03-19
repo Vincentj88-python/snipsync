@@ -201,7 +201,7 @@ export const uploadClipImage = async (userId, file) => {
 export const getImageUrl = async (imagePath) => {
   const { data } = await supabase.storage
     .from('clip-images')
-    .createSignedUrl(imagePath, 3600)
+    .createSignedUrl(imagePath, 900)
   return data?.signedUrl || ''
 }
 
@@ -223,8 +223,9 @@ export const deleteClipImage = async (imagePath) => {
 // ── File clip helpers ────────────────────────────────
 
 export const uploadClipFile = async (userId, file) => {
-  const ext = file.name.split('.').pop() || 'bin'
-  const path = `${userId}/${Date.now()}-${file.name}`
+  // Sanitize filename: remove path separators and special characters, limit length
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
+  const path = `${userId}/${Date.now()}-${safeName}`
   const { data, error } = await supabase.storage
     .from('clip-files')
     .upload(path, file, { contentType: file.type, upsert: false })
@@ -235,7 +236,7 @@ export const uploadClipFile = async (userId, file) => {
 export const getFileUrl = async (filePath) => {
   const { data } = await supabase.storage
     .from('clip-files')
-    .createSignedUrl(filePath, 3600)
+    .createSignedUrl(filePath, 900)
   return data?.signedUrl || ''
 }
 
