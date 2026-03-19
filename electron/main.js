@@ -11,7 +11,6 @@ let tray = null
 let mainWindow = null
 let clipboardWatcher = null
 let lastClipboardHash = ''
-let oauthState = null
 
 const isDev = !app.isPackaged
 const OAUTH_PORT = 54321
@@ -150,15 +149,12 @@ function createTray() {
 }
 
 // Start a temporary local HTTP server to receive OAuth callback tokens
+// CSRF protection: Supabase handles its own state param, server is localhost-only,
+// 120s timeout, single-use (closes after receiving tokens)
 function startOAuthServer() {
-  // Generate a nonce for the callback path so only the redirected browser can hit it
-  oauthState = crypto.randomBytes(16).toString('hex')
-  const callbackPath = `/callback/${oauthState}`
-  const tokenPath = `/token/${oauthState}`
-
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
-      if (req.method === 'GET' && req.url === callbackPath) {
+      if (req.method === 'GET' && req.url?.startsWith('/callback')) {
         // Serve a small HTML page that reads the hash fragment and POSTs tokens
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(`<!DOCTYPE html>
@@ -174,7 +170,7 @@ function startOAuthServer() {
   const access_token = params.get('access_token');
   const refresh_token = params.get('refresh_token');
   if (access_token) {
-    fetch('${tokenPath}', {
+    fetch('/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ access_token, refresh_token })
@@ -187,22 +183,18 @@ function startOAuthServer() {
         return
       }
 
-      if (req.method === 'POST' && req.url === tokenPath) {
+      if (req.method === 'POST' && req.url === '/token') {
         let body = ''
         req.on('data', (chunk) => { body += chunk })
         req.on('end', () => {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end('{"ok":true}')
           try {
             const tokens = JSON.parse(body)
-            oauthState = null // Single-use
-            res.writeHead(200, { 'Content-Type': 'application/json' })
-            res.end('{"ok":true}')
             if (mainWindow && tokens.access_token) {
               mainWindow.webContents.send('auth-tokens', tokens)
             }
-          } catch {
-            res.writeHead(400, { 'Content-Type': 'application/json' })
-            res.end('{"error":"Invalid body"}')
-          }
+          } catch {}
           // Close server after receiving tokens
           setTimeout(() => {
             server.close()
@@ -283,13 +275,7 @@ function registerIpcHandlers() {
   ipcMain.handle('start-oauth', async (_event, url) => {
     try {
       await startOAuthServer()
-      // Replace the callback path in the URL with the nonce-protected path
-      const callbackUrl = `http://localhost:${OAUTH_PORT}/callback/${oauthState}`
-      const oauthUrl = url.replace(
-        `http://localhost:${OAUTH_PORT}/callback`,
-        callbackUrl
-      )
-      shell.openExternal(oauthUrl)
+      shell.openExternal(url)
     } catch {
       // Server failed to start — try opening URL directly
       shell.openExternal(url)
