@@ -151,9 +151,14 @@ function createTray() {
 
 // Start a temporary local HTTP server to receive OAuth callback tokens
 function startOAuthServer() {
+  // Generate a nonce for the callback path so only the redirected browser can hit it
+  oauthState = crypto.randomBytes(16).toString('hex')
+  const callbackPath = `/callback/${oauthState}`
+  const tokenPath = `/token/${oauthState}`
+
   return new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
-      if (req.method === 'GET' && req.url === '/callback') {
+      if (req.method === 'GET' && req.url === callbackPath) {
         // Serve a small HTML page that reads the hash fragment and POSTs tokens
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end(`<!DOCTYPE html>
@@ -168,14 +173,11 @@ function startOAuthServer() {
   const params = new URLSearchParams(hash);
   const access_token = params.get('access_token');
   const refresh_token = params.get('refresh_token');
-  // Extract state from URL query string for CSRF validation
-  const query = new URLSearchParams(window.location.search);
-  const state = query.get('state') || params.get('state') || '';
   if (access_token) {
-    fetch('/token', {
+    fetch('${tokenPath}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ access_token, refresh_token, state })
+      body: JSON.stringify({ access_token, refresh_token })
     }).then(() => {
       document.body.innerHTML = '<div style="text-align:center"><p style="color:#22c55e">Signed in! You can close this tab.</p></div>';
     });
@@ -185,18 +187,12 @@ function startOAuthServer() {
         return
       }
 
-      if (req.method === 'POST' && req.url === '/token') {
+      if (req.method === 'POST' && req.url === tokenPath) {
         let body = ''
         req.on('data', (chunk) => { body += chunk })
         req.on('end', () => {
           try {
             const tokens = JSON.parse(body)
-            // Validate CSRF state token
-            if (oauthState && tokens.state !== oauthState) {
-              res.writeHead(403, { 'Content-Type': 'application/json' })
-              res.end('{"error":"Invalid state"}')
-              return
-            }
             oauthState = null // Single-use
             res.writeHead(200, { 'Content-Type': 'application/json' })
             res.end('{"ok":true}')
@@ -286,12 +282,14 @@ function registerIpcHandlers() {
 
   ipcMain.handle('start-oauth', async (_event, url) => {
     try {
-      // Generate CSRF state token and append to OAuth URL
-      oauthState = crypto.randomBytes(32).toString('hex')
-      const separator = url.includes('?') ? '&' : '?'
-      const urlWithState = `${url}${separator}state=${oauthState}`
       await startOAuthServer()
-      shell.openExternal(urlWithState)
+      // Replace the callback path in the URL with the nonce-protected path
+      const callbackUrl = `http://localhost:${OAUTH_PORT}/callback/${oauthState}`
+      const oauthUrl = url.replace(
+        `http://localhost:${OAUTH_PORT}/callback`,
+        callbackUrl
+      )
+      shell.openExternal(oauthUrl)
     } catch {
       // Server failed to start — try opening URL directly
       shell.openExternal(url)
