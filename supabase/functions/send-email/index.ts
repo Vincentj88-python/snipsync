@@ -18,7 +18,7 @@ function layout(title: string, accent: string, body: string) {
         <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
           <!-- Header -->
           <div style="background: #0a0a0a; padding: 32px 32px 28px; text-align: center;">
-            <p style="font-size: 12px; font-weight: 600; color: #22c55e; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 12px;">SnipSync</p>
+            <img src="https://snipsync.xyz/email-logo-dark.png" alt="SnipSync" width="160" height="43" style="display: inline-block; margin: 0 0 16px;" />
             <h1 style="font-size: 22px; font-weight: 600; color: #ffffff; margin: 0; letter-spacing: -0.02em;">${title}</h1>
             <div style="width: 40px; height: 3px; background: ${accent}; margin: 14px auto 0; border-radius: 2px;"></div>
           </div>
