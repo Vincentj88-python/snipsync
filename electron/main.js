@@ -5,7 +5,7 @@ const path = require('path')
 const os = require('os')
 const http = require('http')
 const { autoUpdater } = require('electron-updater')
-const Sentry = require('@sentry/electron')
+const Sentry = require('@sentry/electron/main')
 
 let tray = null
 let mainWindow = null
