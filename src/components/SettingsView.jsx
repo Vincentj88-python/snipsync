@@ -693,7 +693,7 @@ export default function SettingsView({ subscription, usage, user, devices, clips
 
       {/* App info */}
       <div className="settings-section settings-section--footer">
-        <span className="settings-app-version">SnipSync v0.3.0</span>
+        <span className="settings-app-version">SnipSync v0.3.1</span>
         <a
           className="settings-link"
           href="#"
