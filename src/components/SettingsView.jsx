@@ -288,7 +288,16 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                 Your clips will be encrypted before leaving this device. Only you can read them.
               </span>
             </div>
-            <button className="settings-upgrade-btn" onClick={() => setVaultAction('setup')}>
+            <button className="settings-upgrade-btn" onClick={async () => {
+              // Re-check if encryption was enabled on another device
+              const settings = await getEncryptionSettings(user.id)
+              if (settings?.encryption_enabled) {
+                onEncryptionChange(true, null) // Update local state — vault is locked
+                setVaultAction('unlock')
+              } else {
+                setVaultAction('setup')
+              }
+            }}>
               Enable
             </button>
           </div>
@@ -348,6 +357,16 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                   if (vaultPassword !== vaultPasswordConfirm) { setVaultError('Passwords do not match'); return }
                   setVaultLoading(true)
                   try {
+                    // Guard: re-check if another device already enabled encryption
+                    const existing = await getEncryptionSettings(user.id)
+                    if (existing?.encryption_enabled) {
+                      onEncryptionChange(true, null)
+                      setVaultAction('unlock')
+                      setVaultPassword('')
+                      setVaultPasswordConfirm('')
+                      setVaultLoading(false)
+                      return
+                    }
                     const result = await generateMasterKey(vaultPassword)
                     await saveEncryptionKeys(user.id, result.encryptedMasterKey, result.salt, result.nonce, result.encryptedRecoveryKey)
                     setMigrationProgress('starting...')
