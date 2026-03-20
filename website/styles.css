@@ -1518,3 +1518,116 @@ a { color: inherit; text-decoration: none; }
 
   .hide-mobile { display: none; }
 }
+
+/* ========================================
+   LIGHT MODE PREVIEW
+   Remove this entire block to revert to dark
+   ======================================== */
+
+body.light-mode {
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+body.light-mode ::selection {
+  background: rgba(34, 197, 94, 0.2);
+  color: #000;
+}
+
+body.light-mode #waves-canvas { opacity: 0.15; }
+body.light-mode .grain { opacity: 0.08; }
+
+/* Nav */
+body.light-mode .nav { background: rgba(255,255,255,0.85); border-bottom: 1px solid #e5e5e5; }
+body.light-mode .nav.scrolled { box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+body.light-mode .nav-links a { color: #555; }
+body.light-mode .nav-links a:hover { color: #111; }
+body.light-mode .nav-cta { background: #22c55e; color: #fff; }
+body.light-mode .nav-logo-text { color: #111; }
+
+/* Hero */
+body.light-mode .hero-h1 { color: #111; }
+body.light-mode .hero-sub { color: #666; }
+body.light-mode .hero-usecase { color: #555; border-color: #e0e0e0; }
+body.light-mode .btn-main { background: #22c55e; color: #fff; }
+body.light-mode .btn-ghost { color: #555; border-color: #ddd; }
+body.light-mode .btn-ghost:hover { border-color: #bbb; color: #111; }
+body.light-mode .hero-pill { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+body.light-mode .hero-pill-text { color: #16a34a; }
+body.light-mode .hero-stat-val { color: #111; }
+body.light-mode .hero-stat-label { color: #888; }
+body.light-mode .hero-stat-divider { background: #e0e0e0; }
+
+/* Mockup */
+body.light-mode .mockup-window { background: #111; }
+body.light-mode .mockup-glow { background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%); }
+
+/* Section headings */
+body.light-mode .section-h2 { color: #111; }
+body.light-mode .text-dim { color: #888; }
+body.light-mode .section-label { color: #22c55e; }
+
+/* Bento */
+body.light-mode .bento-card { background: #f8f8f8; border-color: #e8e8e8; }
+body.light-mode .bento-card:hover { border-color: #ddd; }
+body.light-mode .bento-card--lg { background: #f5f5f5; }
+body.light-mode .bento-title { color: #111; }
+body.light-mode .bento-desc { color: #666; }
+body.light-mode .sync-device span { color: #666; }
+
+/* Encryption */
+body.light-mode .encryption-desc { color: #555; }
+body.light-mode .encryption-list li span { color: #666; }
+body.light-mode .encryption-list li strong { color: #111; }
+body.light-mode .encryption-card { background: #f5f5f5; border-color: #e8e8e8; }
+body.light-mode .enc-row--plain { background: #fff; border-color: #e0e0e0; }
+body.light-mode .enc-row--encrypted { background: #f0fdf4; border-color: #dcfce7; }
+body.light-mode .enc-label { color: #888; }
+body.light-mode .enc-text { color: #111; }
+body.light-mode .enc-text--cipher { color: #16a34a; }
+body.light-mode .enc-arrow { color: #22c55e; }
+
+/* How it works */
+body.light-mode .how-num { color: rgba(34,197,94,0.3); }
+body.light-mode .how-step { border-color: #e8e8e8; }
+body.light-mode .how-step:hover { border-color: #ddd; }
+body.light-mode .how-step-title { color: #111; }
+body.light-mode .how-step-desc { color: #666; }
+body.light-mode .how-step-desc kbd { background: #f0f0f0; color: #333; border-color: #ddd; }
+
+/* Pricing */
+body.light-mode .pricing { border-top-color: #eee; }
+body.light-mode .pricing-card { background: #f8f8f8; border-color: #e8e8e8; }
+body.light-mode .pricing-card:hover { border-color: #ddd; transform: translateY(-2px); }
+body.light-mode .pricing-card--pro { background: #f0fdf4; border-color: rgba(34,197,94,0.3); }
+body.light-mode .pricing-card--pro:hover { border-color: rgba(34,197,94,0.5); box-shadow: 0 0 40px rgba(34,197,94,0.08); }
+body.light-mode .pricing-plan-name { color: #888; }
+body.light-mode .pricing-amount { color: #111; }
+body.light-mode .pricing-card--pro .pricing-amount { color: #111; }
+body.light-mode .pricing-period { color: #888; }
+body.light-mode .pricing-desc { color: #666; }
+body.light-mode .pricing-divider { background: #e8e8e8; }
+body.light-mode .pricing-card--pro .pricing-divider { background: rgba(34,197,94,0.15); }
+body.light-mode .pricing-features li { color: #555; }
+body.light-mode .pricing-features li strong { color: #111; }
+body.light-mode .pricing-features-includes { color: #999 !important; }
+body.light-mode .pricing-btn--free { background: #f0f0f0; color: #333; border-color: #ddd; }
+body.light-mode .pricing-btn--free:hover { background: #e8e8e8; color: #111; }
+body.light-mode .pricing-btn--team { background: #f5f5f5; color: #888; border-color: #e0e0e0; }
+body.light-mode .pricing-soon { background: #f0f0f0; border-color: #ddd; color: #888; }
+body.light-mode .pricing-upgrade-note { color: #999; }
+
+/* Download / waitlist */
+body.light-mode .dl { background: #f5f5f5; }
+body.light-mode .dl-h2 { color: #111; }
+body.light-mode .dl-sub { color: #666; }
+body.light-mode .waitlist-input { background: #fff; border-color: #ddd; color: #111; }
+body.light-mode .waitlist-input::placeholder { color: #aaa; }
+body.light-mode .waitlist-platform { color: #888; }
+body.light-mode .waitlist-note { color: #999; }
+
+/* Footer */
+body.light-mode .foot { border-top-color: #eee; }
+body.light-mode .foot-copy { color: #999; }
+body.light-mode .foot-right a { color: #888; }
+body.light-mode .foot-right a:hover { color: #111; }
