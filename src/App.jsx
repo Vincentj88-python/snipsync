@@ -40,6 +40,7 @@ import FilterBar from './components/FilterBar'
 import SearchBar from './components/SearchBar'
 import Toast from './components/Toast'
 import SettingsView from './components/SettingsView'
+import TeamView from './components/TeamView'
 import { detectType, mapPlatform } from './lib/utils'
 import {
   encryptClip,
@@ -67,7 +68,7 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [updateReady, setUpdateReady] = useState(false)
   const [tags, setTags] = useState([])
-  const [view, setView] = useState('clips') // 'clips' | 'settings'
+  const [view, setView] = useState('clips') // 'clips' | 'teams' | 'settings'
   const [subscription, setSubscription] = useState(null)
   const [usage, setUsage] = useState({ clips: 0, devices: 0 })
   const [encryptionEnabled, setEncryptionEnabled] = useState(false)
@@ -872,6 +873,15 @@ export default function App() {
             {deviceName}
           </div>
 
+          {/* Teams */}
+          <button
+            className={`titlebar-gear ${view === 'teams' ? 'titlebar-gear--active' : ''}`}
+            onClick={() => setView(view === 'teams' ? 'clips' : 'teams')}
+            title="Teams"
+          >
+            &#128101;
+          </button>
+
           {/* Settings gear */}
           <button
             className={`titlebar-gear ${view === 'settings' ? 'titlebar-gear--active' : ''}`}
@@ -883,7 +893,18 @@ export default function App() {
         </div>
       </div>
 
-      {view === 'settings' ? (
+      {view === 'teams' ? (
+        <TeamView
+          user={user}
+          deviceId={deviceId}
+          subscription={subscription}
+          onOpenUrl={handleOpenUrl}
+          onDownloadFile={handleDownloadFile}
+          onLightbox={setLightboxSrc}
+          encryptionEnabled={encryptionEnabled}
+          masterKeyRef={masterKeyRef}
+        />
+      ) : view === 'settings' ? (
         <SettingsView
           subscription={subscription}
           usage={usage}
