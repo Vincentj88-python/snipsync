@@ -274,3 +274,167 @@ export const removeTagFromClip = (clipId, tagId) =>
 
 export const getClipTags = (clipId) =>
   supabase.from('clip_tags').select('tag_id, tags(*)').eq('clip_id', clipId)
+
+// ── Team helpers ────────────────────────────────────
+
+export const getMyTeams = async (userId) => {
+  const { data } = await supabase
+    .from('team_members')
+    .select('team_id, role, teams(id, name, owner_id)')
+    .eq('user_id', userId)
+  return data || []
+}
+
+export const getTeamMembers = async (teamId) => {
+  const { data } = await supabase
+    .from('team_members')
+    .select('*, profiles(id, email, display_name, avatar_url)')
+    .eq('team_id', teamId)
+    .order('joined_at')
+  return data || []
+}
+
+export const getChannels = async (teamId) => {
+  const { data } = await supabase.from('channels').select('*').eq('team_id', teamId).order('created_at')
+  return data || []
+}
+
+export const getChannelClips = async (channelId, limit = 50) => {
+  const { data } = await supabase
+    .from('channel_clips')
+    .select('*, clips(*, devices(name, platform)), profiles:sent_by(display_name, email)')
+    .eq('channel_id', channelId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return data || []
+}
+
+export const postToChannel = async (channelId, clipId, sentBy) => {
+  return supabase.from('channel_clips').insert({ channel_id: channelId, clip_id: clipId, sent_by: sentBy }).select().single()
+}
+
+export const subscribeToChannel = (channelId, onInsert, onDelete) => {
+  const channel = supabase.channel(`channel_clips:${channelId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'channel_clips', filter: `channel_id=eq.${channelId}` },
+      (payload) => onInsert?.(payload.new))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'channel_clips', filter: `channel_id=eq.${channelId}` },
+      (payload) => onDelete?.(payload.old.id))
+    .subscribe()
+  return () => supabase.removeChannel(channel)
+}
+
+// ── Direct clip helpers ─────────────────────────────
+
+export const sendDirectClip = async (teamId, senderId, receiverId, clipId) => {
+  return supabase.from('direct_clips').insert({ team_id: teamId, sender_id: senderId, receiver_id: receiverId, clip_id: clipId }).select().single()
+}
+
+export const getDirectClips = async (userId, limit = 50) => {
+  const { data } = await supabase
+    .from('direct_clips')
+    .select('*, clips(*, devices(name, platform)), sender:sender_id(display_name, email), receiver:receiver_id(display_name, email)')
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return data || []
+}
+
+export const markDirectClipRead = async (directClipId) => {
+  return supabase.from('direct_clips').update({ read_at: new Date().toISOString() }).eq('id', directClipId)
+}
+
+export const getUnreadDirectCount = async (userId) => {
+  const { count } = await supabase
+    .from('direct_clips')
+    .select('*', { count: 'exact', head: true })
+    .eq('receiver_id', userId)
+    .is('read_at', null)
+  return count || 0
+}
+
+// ── Mention helpers ─────────────────────────────────
+
+export const createMentions = async (clipId, mentions, channelClipId = null, directClipId = null) => {
+  const records = mentions.map((m) => ({
+    clip_id: clipId,
+    channel_clip_id: channelClipId,
+    direct_clip_id: directClipId,
+    mentioned_user_id: m.type === 'user' ? m.id : null,
+    mentioned_group_id: m.type === 'group' ? m.id : null,
+  }))
+  return supabase.from('clip_mentions').insert(records)
+}
+
+export const getMyMentions = async (userId, limit = 50) => {
+  // Get group IDs user belongs to
+  const { data: groupMemberships } = await supabase
+    .from('group_members')
+    .select('group_id')
+    .eq('user_id', userId)
+  const groupIds = (groupMemberships || []).map((g) => g.group_id)
+
+  const { data } = await supabase
+    .from('clip_mentions')
+    .select('*, clips(*, devices(name, platform))')
+    .or(`mentioned_user_id.eq.${userId}${groupIds.length ? `,mentioned_group_id.in.(${groupIds.join(',')})` : ''}`)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return data || []
+}
+
+export const getUnreadMentionCount = async (userId) => {
+  const { data: groupMemberships } = await supabase
+    .from('group_members')
+    .select('group_id')
+    .eq('user_id', userId)
+  const groupIds = (groupMemberships || []).map((g) => g.group_id)
+
+  const { count } = await supabase
+    .from('clip_mentions')
+    .select('*', { count: 'exact', head: true })
+    .or(`mentioned_user_id.eq.${userId}${groupIds.length ? `,mentioned_group_id.in.(${groupIds.join(',')})` : ''}`)
+    .is('read_at', null)
+  return count || 0
+}
+
+export const markMentionRead = async (mentionId) => {
+  return supabase.from('clip_mentions').update({ read_at: new Date().toISOString() }).eq('id', mentionId)
+}
+
+// ── Groups helper (for @mention autocomplete) ───────
+
+export const getTeamGroups = async (teamId) => {
+  const { data } = await supabase
+    .from('groups')
+    .select('*, group_members(user_id)')
+    .eq('team_id', teamId)
+    .order('name')
+  return data || []
+}
+
+// ── Parse @mentions from text ───────────────────────
+
+export const parseMentions = (text, teamMembers, teamGroups) => {
+  const mentions = []
+  const mentionRegex = /@(\w+)/g
+  let match
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const name = match[1].toLowerCase()
+    // Check groups first
+    const group = teamGroups.find((g) => g.name.toLowerCase() === name)
+    if (group) {
+      mentions.push({ type: 'group', id: group.id, name: group.name })
+      continue
+    }
+    // Check members
+    const member = teamMembers.find((m) => {
+      const displayName = m.profiles?.display_name?.toLowerCase().split(' ')[0]
+      const email = m.profiles?.email?.split('@')[0].toLowerCase()
+      return displayName === name || email === name
+    })
+    if (member) {
+      mentions.push({ type: 'user', id: member.user_id, name: member.profiles?.display_name || member.profiles?.email })
+    }
+  }
+  return mentions
+}
