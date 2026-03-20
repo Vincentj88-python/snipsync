@@ -213,9 +213,9 @@ export default function SettingsView({ subscription, usage, user, devices, clips
             <li>Priority support</li>
           </ul>
           <div className="settings-price">
-            <span className="settings-price-amount">$3.99</span>
+            <span className="settings-price-amount">$4.99</span>
             <span className="settings-price-period">/month</span>
-            <span className="settings-price-alt">or $29/year</span>
+            <span className="settings-price-alt">or $39/year</span>
           </div>
         </div>
       )}

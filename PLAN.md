@@ -23,7 +23,7 @@ The fastest way to move information between devices and people.
 - 7-day history
 - Text clips only (no images or files)
 
-### Pro ($3.99/mo or $29/yr)
+### Pro ($4.99/mo or $39/yr)
 
 - Unlimited devices
 - Unlimited clips
@@ -334,7 +334,7 @@ Tasks:
 ### Break-even
 
 - Supabase Pro costs $25/mo
-- SnipSync Pro is $3.99/mo per user
+- SnipSync Pro is $4.99/mo per user
 - **7 paying users covers infrastructure costs**
 - Everything after that is profit (~95% margins)
 
