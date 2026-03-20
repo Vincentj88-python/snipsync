@@ -34,7 +34,7 @@ The fastest way to move information between devices and people.
 - Pinned clips & custom tags
 - Export (CSV/JSON)
 
-### Team ($6.99/seat/mo)
+### Team ($8.99/seat/mo)
 
 - Everything in Pro
 - Channels (shared clip feeds — like #design-links, #staging-urls)
