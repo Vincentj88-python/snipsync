@@ -127,6 +127,48 @@ Performance:
 - No background polling — only sync when popup is open
 - Service worker for badge notifications (new clips count)
 
+### Phase 3.5: Mobile App — React Native — IN PROGRESS
+
+Goal: iOS (and later Android) companion app. Same Supabase backend, same account, same clips. No IAP — Pro is checked server-side. Users upgrade via desktop or snipsync.xyz.
+
+#### Phase 1 — Read + Copy (MVP) — IN PROGRESS
+
+Completed:
+- [x] React Native project scaffolded in `mobile/` (bare workflow)
+- [x] All Phase 1 dependencies installed (Supabase, tweetnacl, quick-crypto, Google Sign-In, etc.)
+- [x] `supabase.js`, `crypto.js`, `utils.js` adapted for React Native
+- [x] SignInScreen with app icon
+- [x] ClipListScreen (realtime sync, vault unlock, compose, filters)
+- [x] ClipCard component
+- [x] AppNavigator with auth gating
+- [x] Google OAuth: iOS client ID, PKCE flow via `signInWithIdToken`
+- [x] Deep linking: `snipsync://` URL scheme, AppDelegate bridged for RCTLinkingManager
+- [x] Sign-in flow confirmed working end-to-end on physical device
+- [x] PBKDF2 backward compat: tries 600K then 100K for legacy keys
+
+Remaining:
+- [ ] Confirm vault unlock works on physical iPhone against live encrypted clips
+- [ ] Build basic SettingsScreen (account info, sign out, device list)
+- [ ] Test full end-to-end: see desktop clips in real time, tap to copy
+- [ ] Pull-to-refresh
+- [ ] Offline cache (last-fetched clips in AsyncStorage)
+
+#### Phase 2 — Send from Phone
+
+- [ ] Compose screen (text input + send)
+- [ ] iOS Share Extension ("Share to SnipSync" from Safari, Notes, etc.)
+- [ ] Android Share Intent receiver
+- [ ] Camera roll → image clip
+- [ ] Encrypt outbound clips if vault is unlocked
+
+#### Phase 3 — Full Parity
+
+- [ ] File upload via document picker
+- [ ] Tags and filtering
+- [ ] Push notifications ("New clip received")
+- [ ] Full encryption setup on mobile (set vault password, recovery phrase)
+- [ ] Biometric unlock (Face ID / Touch ID) for vault
+
 ### Phase 4: Team Features (v1.0.0)
 
 Goal: Launch team tier — this is where real revenue comes from
@@ -166,7 +208,7 @@ Tasks:
 
 ### Phase 5: Expansion (v1.x+)
 
-- Mobile companion app (React Native) — read-only at first, then full sync
+- Mobile companion app (React Native) — **IN PROGRESS as Phase 3.5** (Phase 1 sign-in working, vault in testing)
 - Global hotkey to summon SnipSync (Cmd+Shift+V or configurable)
 - ~~End-to-end encryption~~ — **DONE** (shipped 2026-03-17, polished 2026-03-18 with password confirm, strength bar, recovery chips, vault overlay, force-reset)
 - API access for Pro/Team (programmatic clip creation)
@@ -291,7 +333,8 @@ Tasks:
 | Clipboard monitoring | Electron main process | Can't access system clipboard from renderer |
 | List virtualization | react-window | Tiny bundle (6KB), proven, simple API |
 | Browser extension | Manifest V3 | Required for Chrome Web Store, works in Edge/Brave too |
-| E2E encryption | tweetnacl-js + Web Crypto PBKDF2 | Small, audited, no native deps. Shipped 2026-03-17, polished 2026-03-18. |
+| E2E encryption | tweetnacl-js + Web Crypto PBKDF2 | Small, audited, no native deps. Shipped 2026-03-17, polished 2026-03-18. PBKDF2 upgraded to 600K iterations (2026-03-20) with backward compat. |
+| Mobile crypto | react-native-quick-crypto | Native C++ PBKDF2 via JSI — 600K iterations in ~200ms. Replaces Web Crypto (unavailable in RN). |
 | Transactional email | Resend | Simple API, good deliverability, noreply@updates.snipsync.xyz |
 | Device identity | Persistent UUID in userData | Survives hardware changes, replaces fragile SHA-256 fingerprint |
 
@@ -342,33 +385,40 @@ Tasks:
 
 On the free plan, Supabase pauses the project after 1 week of no API calls. All users would see the app go dead. **Upgrade to Pro before any public launch.**
 
-## Current Status (as of 2026-03-18)
+## Current Status (as of 2026-03-20)
 
 ### What's live
-- Desktop app v0.3.0 (Mac + Windows) — GitHub Release published
-- Production-ready UI with polished contrast, compact cards, hover actions
+- Desktop app v0.3.1 (Mac + Windows) — GitHub Release published
+- Full security hardening: JWT on all edge functions, Electron sandbox, PBKDF2 600K, master key auto-clear, rate limiting, HMAC, hardened CSP, Vercel security headers
+- Logo rebranded: S-arrow hexagon design across app, tray, website, emails
+- All major dependencies upgraded (Electron 35, Vite 6, Sentry 5)
+- Pricing updated: Pro $4.99/mo or $39/yr, Team $8.99/seat/mo
 - E2E encryption with full UX (confirm, strength bar, recovery chips, vault overlay, force-reset)
 - File clips (drag-and-drop, up to 25MB on Pro) + image clips (up to 10MB on Pro)
 - Transactional emails via Resend (welcome, deletion, welcome-back)
 - Account deletion with full cleanup (profile + auth user + abuse prevention record)
 - Persistent UUID device identity (with legacy migration)
 - Chrome extension working (loaded unpacked, OAuth via chrome.identity)
-- Website at snipsync.xyz with waitlist — updated for v0.3.0
+- Website at snipsync.xyz with waitlist — pricing updated for v0.3.1
 - Sentry, Vercel Analytics, GitHub Actions all active
 - 27 tests passing
 
+### In progress
+- Mobile app Phase 1 (React Native): scaffolded, sign-in working, vault unlock being tested on physical iPhone
+
 ### Waiting on
 - Lemon Squeezy account approval (need to record and send demo video)
-- Apple Developer account ($99/yr) — needed for Mac notarization
+- Apple Developer account ($99/yr) — needed for Mac notarization and iOS App Store
 - Google OAuth consent screen verification (100 user cap without it)
 - Supabase upgrade (must upgrade before 50 users — auto-pause risk on free plan)
 
 ### Next up
+- Complete mobile Phase 1: confirm vault unlock, build SettingsScreen, test full clip sync on device
 - Record demo video for Lemon Squeezy
 - Submit Google OAuth for verification with privacy policy URL
 - Connect Lemon Squeezy once approved (plug in checkout URL)
+- Purchase Apple Developer account (covers both Mac notarization and iOS App Store)
 - Browser extension: right-click context menu, Chrome Web Store publish
-- Purchase Apple Developer account for notarization
 
 ## Launch Checklist (before each phase)
 

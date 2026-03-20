@@ -4,13 +4,13 @@ import { supabase } from './supabase'
 
 // ── PBKDF2 key derivation (Web Crypto API) ──────────
 
-async function deriveKey(password, salt) {
+async function deriveKey(password, salt, iterations = 600000) {
   const enc = new TextEncoder()
   const keyMaterial = await crypto.subtle.importKey(
     'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
   )
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
     keyMaterial,
     256
   )
@@ -115,11 +115,19 @@ export async function unlockWithRecoveryPhrase(recoveryPhrase, encryptedRecovery
 
 export async function unlockMasterKey(vaultPassword, encryptedMasterKeyB64, saltB64, nonceB64) {
   const salt = decodeBase64(saltB64)
-  const wrappingKey = await deriveKey(vaultPassword, salt)
   const encryptedMasterKey = decodeBase64(encryptedMasterKeyB64)
   const nonce = decodeBase64(nonceB64)
 
-  const masterKey = nacl.secretbox.open(encryptedMasterKey, nonce, wrappingKey)
+  // Try current iteration count (600K)
+  let wrappingKey = await deriveKey(vaultPassword, salt, 600000)
+  let masterKey = nacl.secretbox.open(encryptedMasterKey, nonce, wrappingKey)
+
+  // Fall back to legacy iteration count (100K)
+  if (!masterKey) {
+    wrappingKey = await deriveKey(vaultPassword, salt, 100000)
+    masterKey = nacl.secretbox.open(encryptedMasterKey, nonce, wrappingKey)
+  }
+
   if (!masterKey) {
     throw new Error('Wrong vault password')
   }

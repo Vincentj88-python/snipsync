@@ -1,13 +1,77 @@
 # SnipSync (snipsync.xyz) — Project Status
 
-**Last Updated**: 2026-03-18
-**Current Version**: v0.3.0 (tag on commit 674470a)
-**Status**: Production-ready — demo-ready for Lemon Squeezy video
+**Last Updated**: 2026-03-20
+**Current Version**: v0.3.1 (released Mac DMG + Windows EXE on GitHub Releases)
+**Status**: Active Development — security hardened, mobile Phase 1 in progress
 **Repo**: github.com/Vincentj88-python/snipsync (public)
 **Website**: snipsync.xyz (live on Vercel, waitlist active)
 **Supabase**: kohwpkwcopkslbtkczag (EU region, free plan)
 **Sentry**: Active (main + renderer, confirmed working)
 **CI/CD**: GitHub Actions (tests on push, Mac+Win builds on tag)
+
+---
+
+## What's Shipped (v0.3.1)
+
+### Logo Rebrand
+- New SnipSync logo (S-arrow hexagon design) integrated across entire project
+- App icon, tray icons, website nav/footer, favicon, OG image, and email headers all updated
+- Tray icons regenerated with proper transparency via sharp
+
+### Security Hardening (Critical)
+- JWT auth added to all 3 edge functions (record-deletion, send-email, check-deleted)
+- Users can only delete own account / email own address / check own deletion status
+- send-email supports dual-mode: user JWT or service-role key (for internal calls)
+- URL protocol validation added in browser mode
+
+### Security Hardening (High)
+- Electron sandbox and webSecurity enabled
+- Permission denial handlers for camera, microphone, and geolocation
+- PBKDF2 iterations increased from 100K to 600K with backward compatibility (tries 600K then 100K)
+- Master key cleared from memory on sign-out, on beforeunload, and after 30-minute auto-lock
+- File upload path sanitization
+- Signed URL expiry reduced from 1 hour to 15 minutes
+- Constant-time HMAC verification in ls-webhook (prevents timing attacks)
+- Recovery phrase wordlist expanded from 64 to 256 words (increased entropy)
+
+### Security Hardening (Medium)
+- Vault unlock rate limiting with exponential backoff
+- CSP hardened: object-src none, base-uri self, form-action self
+- Vercel security headers added: X-Frame-Options, HSTS, and others
+- Error messages sanitized in edge functions to prevent information leakage
+
+### Dependency Upgrades
+- Electron 28 → 35, electron-builder 24 → 26, @sentry/electron 4 → 5
+- Vite 5 → 6, Vitest 1 → 2, @vitejs/plugin-react 4 → 5
+- Sentry import fixed for v5 (require @sentry/electron/main)
+- vite.config.js renamed to vite.config.mjs for ESM compatibility
+- Vulnerability audit: 16 vulns (5 high) reduced to 5 (all moderate, dev-only)
+
+### OAuth Fix
+- Reverted custom state parameter — it conflicted with Supabase's internal CSRF state handling
+- Simple callback approach adopted; Supabase handles CSRF internally
+
+### Encryption Fix
+- Added re-check before enabling encryption to prevent master key overwrite when enabling on a second device
+
+### Pricing Updates
+- Pro: $3.99/mo → $4.99/mo, $29/yr → $39/yr
+- Team: $6.99/seat/mo → $8.99/seat/mo
+- Website pricing section redesigned: Pro hero card, cleaner layout structure
+- Upgrade note added to website: "Upgrade to Pro from inside the app via Settings"
+
+### Mobile App — React Native (Phase 1 in progress)
+- React Native project scaffolded in `mobile/` folder (bare workflow)
+- All Phase 1 dependencies installed: Supabase, tweetnacl, react-native-quick-crypto, Google Sign-In, etc.
+- Adapted lib files from desktop: supabase.js, crypto.js, utils.js ported for React Native
+- Built screens: SignInScreen (with app icon), ClipListScreen (full clip list with realtime, vault unlock, compose, filters)
+- Built ClipCard component
+- Navigation: AppNavigator with auth gating (signed-out vs signed-in stack)
+- Google OAuth: configured with iOS client ID, PKCE flow via Supabase `signInWithIdToken`
+- Deep linking: snipsync:// URL scheme registered, AppDelegate bridged for RCTLinkingManager
+- Sign-in flow working end-to-end: Google → Safari → callback → app
+- PBKDF2 backward compatibility: tries 600K iterations first, falls back to 100K for legacy keys
+- Currently testing vault unlock on physical iPhone
 
 ---
 
@@ -115,6 +179,7 @@
 | 2 | **GitHub Release duplicate .exe files** | Low | Sometimes two .exe files appear from previous releases. Need clean release process. |
 | 3 | **Windows installer retry + multi-instance** | Low | User reported needing to click "retry" during install. Single instance lock added but NSIS config may need tweaks. |
 | 4 | **Extension popup CSS** | Cosmetic | Chrome popup has hard square corners (browser limitation). |
+| 5 | **Mobile vault unlock** | In Testing | Vault unlock on physical iPhone being tested — PBKDF2 backward compat (600K/100K) may need verification against live encrypted clips. |
 
 ---
 
@@ -140,19 +205,23 @@
 | Resend | Active (noreply@updates.snipsync.xyz) |
 | Lemon Squeezy | Awaiting approval |
 | Chrome extension | Working (loaded unpacked) |
-| Mac + Windows builds | On GitHub Releases (v0.3.0) |
-| Website | Live at snipsync.xyz with waitlist |
+| Mac + Windows builds | On GitHub Releases (v0.3.1) |
+| Mobile (iOS) | Phase 1 in progress — sign-in working, vault unlock in testing |
+| Website | Live at snipsync.xyz with waitlist — pricing updated for v0.3.1 |
 
 ---
 
 ## What's Next
 
-1. Record demo video for Lemon Squeezy
-2. Submit demo video to Lemon Squeezy for approval
-3. Submit Google OAuth for verification (with privacy policy URL)
-4. Purchase Apple Developer account for Mac notarization
-5. Upgrade Supabase before public launch
-6. Browser extension: right-click context menu, Chrome Web Store publish
+1. Finish mobile Phase 1: confirm vault unlock works on physical iPhone with live encrypted clips
+2. Mobile Phase 1: build basic SettingsScreen (account info, sign out, device list)
+3. Mobile Phase 1: test end-to-end — sign in on phone, see desktop clips in real time, tap to copy
+4. Record demo video for Lemon Squeezy
+5. Submit demo video to Lemon Squeezy for approval
+6. Submit Google OAuth for verification (with privacy policy URL)
+7. Purchase Apple Developer account for Mac notarization (also needed for App Store)
+8. Upgrade Supabase before public launch
+9. Browser extension: right-click context menu, Chrome Web Store publish
 
 ---
 
@@ -168,24 +237,83 @@
 ## Key Files
 
 ```
-/electron/main.js           — Main process (tray, OAuth, clipboard watch, IPC, persistent UUID)
-/electron/preload.js        — IPC bridge to renderer (includes getLegacyMachineId)
-/src/App.jsx                — Root component (auth, device setup, clip sync, vault overlay, lightbox)
-/src/lib/supabase.js        — Supabase client + all DB helpers + file/image upload + email
-/src/lib/crypto.js          — E2E encryption (key gen, vault password, encrypt/decrypt, recovery)
-/src/lib/utils.js           — detectType(), mapPlatform()
-/src/components/            — ClipCard (context menu, expand, lightbox), InputArea (drag-drop), FilterBar, SearchBar (persistent, / shortcut), Toast, SettingsView (sign-out, encryption UX)
-/src/styles.css             — All styles + animations + context menu + vault overlay + lightbox
-/website/                   — Landing page (index, privacy, terms, styles, script)
-/supabase/functions/        — ls-webhook, record-deletion, check-deleted, send-email
-/.github/workflows/         — CI + Release
-/PLAN.md                    — Product roadmap
-/ENCRYPTION_PLAN.md         — Encryption architecture (implemented)
+/electron/main.js                        — Main process (tray, OAuth, clipboard watch, IPC, persistent UUID)
+/electron/preload.js                     — IPC bridge to renderer (includes getLegacyMachineId)
+/src/App.jsx                             — Root component (auth, device setup, clip sync, vault overlay, lightbox)
+/src/lib/supabase.js                     — Supabase client + all DB helpers + file/image upload + email
+/src/lib/crypto.js                       — E2E encryption (key gen, vault password, encrypt/decrypt, recovery)
+/src/lib/utils.js                        — detectType(), mapPlatform()
+/src/components/                         — ClipCard (context menu, expand, lightbox), InputArea (drag-drop), FilterBar, SearchBar (persistent, / shortcut), Toast, SettingsView (sign-out, encryption UX)
+/src/styles.css                          — All styles + animations + context menu + vault overlay + lightbox
+/website/                                — Landing page (index, privacy, terms, styles, script)
+/supabase/functions/                     — ls-webhook, record-deletion, check-deleted, send-email (all JWT-protected)
+/.github/workflows/                      — CI + Release
+/vite.config.mjs                         — Vite config (renamed from .js for ESM compat)
+/PLAN.md                                 — Product roadmap
+/ENCRYPTION_PLAN.md                      — Encryption architecture (implemented)
+/mobile/src/lib/supabase.js             — Supabase client adapted for React Native
+/mobile/src/lib/crypto.js              — Crypto adapted: PBKDF2 via react-native-quick-crypto
+/mobile/src/screens/SignInScreen.js    — Google OAuth sign-in screen
+/mobile/src/screens/ClipListScreen.js  — Main clip list (realtime, vault unlock, compose, filters)
+/mobile/src/components/ClipCard.js     — Clip card component
+/mobile/src/navigation/AppNavigator.js — Auth-gated navigation stack
+/mobile/PLAN.md                        — Mobile app phased plan
 ```
 
 ---
 
 ## Session Log
+
+### 2026-03-20 (v0.3.1 — Security Hardening, Dependency Upgrades, Mobile Phase 1)
+
+**Logo Rebrand**
+- New S-arrow hexagon logo integrated across app icon, tray icons, website nav/footer, favicon, OG image, email headers
+- Tray icons regenerated with proper transparency via sharp
+
+**Security — Critical**
+- JWT auth added to all 3 edge functions (record-deletion, send-email, check-deleted)
+- Users scoped to own data only; send-email supports service-role bypass for internal calls
+- URL protocol validation added in browser mode
+
+**Security — High**
+- Electron sandbox + webSecurity enabled; permission denial handlers for camera/mic/geo
+- PBKDF2 iterations increased 100K → 600K with backward compat (tries 600K, falls back to 100K)
+- Master key cleared from memory on sign-out, beforeunload, and 30min auto-lock
+- File upload path sanitization; signed URL expiry reduced 1hr → 15min
+- Constant-time HMAC in ls-webhook; recovery phrase wordlist expanded 64 → 256 words
+
+**Security — Medium**
+- Vault unlock rate limiting with exponential backoff
+- CSP hardened (object-src none, base-uri self, form-action self)
+- Vercel security headers added (X-Frame-Options, HSTS, etc.)
+- Error messages sanitized in edge functions
+
+**Dependency Upgrades**
+- Electron 28→35, electron-builder 24→26, @sentry/electron 4→5
+- Vite 5→6, Vitest 1→2, @vitejs/plugin-react 4→5
+- Sentry v5 import fixed; vite.config.js → vite.config.mjs for ESM compat
+- Vuln audit: 16 (5 high) → 5 (moderate, dev-only)
+
+**Bug Fixes**
+- OAuth: reverted custom state param — conflicted with Supabase's own CSRF handling
+- Encryption: re-check before enabling prevents master key overwrite on second device
+
+**Pricing**
+- Pro: $3.99→$4.99/mo, $29→$39/yr; Team: $6.99→$8.99/seat/mo
+- Website pricing section redesigned with Pro hero card and cleaner structure
+
+**Mobile — React Native Phase 1 (in progress)**
+- Project scaffolded in mobile/ (bare workflow), all Phase 1 deps installed
+- Adapted supabase.js, crypto.js, utils.js for React Native (AsyncStorage, quick-crypto)
+- Built SignInScreen, ClipListScreen (realtime, vault unlock, compose, filters), ClipCard, AppNavigator
+- Google OAuth via native SDK + Supabase signInWithIdToken; PKCE flow working
+- snipsync:// deep link registered; AppDelegate bridged for RCTLinkingManager
+- Sign-in flow confirmed working end-to-end on device
+- PBKDF2 backward compat in mobile crypto.js (600K then 100K)
+- Vault unlock on physical iPhone currently being tested
+
+**Release**
+- v0.3.1 tagged and released (Mac DMG + Windows EXE on GitHub Releases)
 
 ### 2026-03-18 (v0.3.0 — Production-Ready Overhaul)
 - UI overhaul: text contrast, card polish, compact layout, type-colored borders
