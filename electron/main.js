@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, clipboard } = require('electron')
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, clipboard, globalShortcut, Notification } = require('electron')
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
@@ -344,12 +344,49 @@ app.whenReady().then(() => {
   createTray()
   createWindow()
 
+  // Global shortcut: Cmd+Shift+V (Mac) / Ctrl+Shift+V (Win) to snip clipboard
+  const shortcut = process.platform === 'darwin' ? 'CommandOrControl+Shift+V' : 'Ctrl+Shift+V'
+  globalShortcut.register(shortcut, () => {
+    if (!mainWindow) return
+
+    // Check for files first (Finder copies file paths)
+    const filePaths = clipboard.readBuffer('public.file-url')?.toString()
+    if (filePaths && filePaths.startsWith('file://')) {
+      // File on clipboard — send path to renderer for upload
+      const decodedPath = decodeURI(filePaths.replace('file://', ''))
+      mainWindow.webContents.send('snip-file', decodedPath)
+      new Notification({ title: 'SnipSync', body: 'File snipped!' }).show()
+      return
+    }
+
+    // Check for image on clipboard
+    const image = clipboard.readImage()
+    if (!image.isEmpty()) {
+      const pngBuffer = image.toPNG()
+      mainWindow.webContents.send('snip-image', pngBuffer.toString('base64'))
+      new Notification({ title: 'SnipSync', body: 'Image snipped!' }).show()
+      return
+    }
+
+    // Text on clipboard
+    const text = clipboard.readText()
+    if (text && text.trim()) {
+      mainWindow.webContents.send('snip-text', text.trim())
+      new Notification({ title: 'SnipSync', body: 'Clip snipped!' }).show()
+      return
+    }
+  })
+
   // Check for updates after launch (production only)
   if (!isDev) {
     setTimeout(() => {
       autoUpdater.checkForUpdates().catch(() => {})
     }, 5000)
   }
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })
 
 app.on('window-all-closed', () => {

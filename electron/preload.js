@@ -37,4 +37,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeClipboardChangeListener: (handler) => {
     ipcRenderer.removeListener('clipboard-change', handler)
   },
+  onSnipText: (callback) => {
+    const handler = (_event, text) => callback(text)
+    ipcRenderer.on('snip-text', handler)
+    return handler
+  },
+  removeSnipTextListener: (handler) => {
+    ipcRenderer.removeListener('snip-text', handler)
+  },
+  onSnipImage: (callback) => {
+    const handler = (_event, base64) => callback(base64)
+    ipcRenderer.on('snip-image', handler)
+    return handler
+  },
+  removeSnipImageListener: (handler) => {
+    ipcRenderer.removeListener('snip-image', handler)
+  },
+  onSnipFile: (callback) => {
+    const handler = (_event, filePath) => callback(filePath)
+    ipcRenderer.on('snip-file', handler)
+    return handler
+  },
+  removeSnipFileListener: (handler) => {
+    ipcRenderer.removeListener('snip-file', handler)
+  },
 })

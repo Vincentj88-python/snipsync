@@ -454,6 +454,94 @@ export default function App() {
     }
   }, [autoCapture])
 
+  // ── Global shortcut snip handlers ──────────────────
+  useEffect(() => {
+    if (!window.electronAPI?.onSnipText) return
+
+    const textHandler = window.electronAPI.onSnipText(async (text) => {
+      const { user: u, deviceId: d, subscription: sub, usage: usg } = autoCaptureRef.current
+      if (!u || !d || !text) return
+      const plan = sub?.plan || 'free'
+      const limits = PLAN_LIMITS[plan]
+      if (usg && usg.clips >= limits.maxClipsPerMonth) return
+
+      const type = detectType(text)
+      let contentToSave = text
+      let clipEncrypted = false
+      let clipNonce = null
+      if (encryptionEnabled && masterKeyRef.current) {
+        const enc = encryptClip(text, masterKeyRef.current)
+        contentToSave = enc.encryptedContent
+        clipEncrypted = true
+        clipNonce = enc.nonce
+      }
+      const { data } = await addClip(u.id, d, contentToSave, type)
+      if (data) {
+        const displayClip = clipEncrypted ? { ...data, content: text, encrypted: true } : data
+        setClips((prev) => {
+          if (prev.some((c) => c.id === data.id)) return prev
+          return [displayClip, ...prev]
+        })
+        if (clipEncrypted) {
+          await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
+        }
+        setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
+        setLastSyncedAt(new Date())
+      }
+    })
+
+    const imageHandler = window.electronAPI.onSnipImage(async (base64) => {
+      const { user: u, deviceId: d, subscription: sub } = autoCaptureRef.current
+      if (!u || !d) return
+      const plan = sub?.plan || 'free'
+      if (plan === 'free') return // Images are Pro-only
+
+      // Convert base64 to blob and upload
+      const byteString = atob(base64)
+      const ab = new ArrayBuffer(byteString.length)
+      const ia = new Uint8Array(ab)
+      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i)
+      const blob = new Blob([ab], { type: 'image/png' })
+      const file = new File([blob], `snip-${Date.now()}.png`, { type: 'image/png' })
+
+      const { data: uploadData, error } = await uploadClipImage(u.id, file)
+      if (!error && uploadData) {
+        await addImageClip(u.id, d, uploadData.path, file.size)
+      }
+    })
+
+    const fileHandler = window.electronAPI.onSnipFile(async (filePath) => {
+      const { user: u, deviceId: d, subscription: sub } = autoCaptureRef.current
+      if (!u || !d) return
+      const plan = sub?.plan || 'free'
+      if (plan === 'free') return // Files are Pro-only
+
+      // Read file from disk via fetch (works for local file:// in Electron)
+      try {
+        const response = await fetch(`file://${filePath}`)
+        const blob = await response.blob()
+        const fileName = filePath.split('/').pop()
+        const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' })
+
+        if (file.type.startsWith('image/')) {
+          const { data: uploadData, error } = await uploadClipImage(u.id, file)
+          if (!error && uploadData) await addImageClip(u.id, d, uploadData.path, file.size)
+        } else {
+          const { data: uploadData, error } = await uploadClipFile(u.id, file)
+          if (!error && uploadData) await addFileClip(u.id, d, uploadData.path, fileName, file.size)
+        }
+      } catch {
+        // File read failed — silently ignore
+      }
+    })
+
+    return () => {
+      window.electronAPI.removeSnipTextListener(textHandler)
+      window.electronAPI.removeSnipImageListener(imageHandler)
+      window.electronAPI.removeSnipFileListener(fileHandler)
+    }
+  }, [encryptionEnabled])
+
   const handleToggleAutoCapture = useCallback((enabled) => {
     setAutoCapture(enabled)
     localStorage.setItem('snip_auto_capture', String(enabled))
