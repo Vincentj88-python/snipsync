@@ -438,3 +438,39 @@ export const parseMentions = (text, teamMembers, teamGroups) => {
   }
   return mentions
 }
+
+// ── Collection helpers ──────────────────────────────
+
+export const getCollections = async (teamId) => {
+  const { data } = await supabase
+    .from('collections')
+    .select('*, collection_clips(id)')
+    .eq('team_id', teamId)
+    .order('created_at')
+  return (data || []).map((c) => ({ ...c, clipCount: c.collection_clips?.length || 0 }))
+}
+
+export const getCollectionClips = async (collectionId) => {
+  const { data } = await supabase
+    .from('collection_clips')
+    .select('*, clips(*, devices(name, platform)), profiles:added_by(display_name, email)')
+    .eq('collection_id', collectionId)
+    .order('created_at', { ascending: false })
+  return data || []
+}
+
+export const addToCollection = async (collectionId, clipId, addedBy) => {
+  return supabase.from('collection_clips').insert({ collection_id: collectionId, clip_id: clipId, added_by: addedBy })
+}
+
+export const removeFromCollection = async (collectionClipId) => {
+  return supabase.from('collection_clips').delete().eq('id', collectionClipId)
+}
+
+export const createCollection = async (teamId, name, description, createdBy) => {
+  return supabase.from('collections').insert({ team_id: teamId, name, description, created_by: createdBy }).select().single()
+}
+
+export const deleteCollection = async (collectionId) => {
+  return supabase.from('collections').delete().eq('id', collectionId)
+}

@@ -3,6 +3,7 @@ import MemberList from '../components/MemberList'
 import InviteManager from '../components/InviteManager'
 import ChannelManager from '../components/ChannelManager'
 import GroupManager from '../components/GroupManager'
+import CollectionManager from '../components/CollectionManager'
 import TeamSettings from '../components/TeamSettings'
 import { getTeamMembers, getMemberCount } from '../lib/supabase'
 
@@ -11,6 +12,7 @@ const TABS = [
   { id: 'invites', label: 'Invites' },
   { id: 'channels', label: 'Channels' },
   { id: 'groups', label: 'Groups' },
+  { id: 'collections', label: 'Collections' },
   { id: 'settings', label: 'Settings' },
 ]
 
@@ -56,42 +58,22 @@ export default function TeamDashboard({ team, myRole, user, onTeamUpdated }) {
 
       <div className="tab-content">
         {activeTab === 'members' && (
-          <MemberList
-            members={members}
-            isAdmin={isAdmin}
-            currentUserId={user.id}
-            teamOwnerId={team.owner_id}
-            onMembersChanged={loadMembers}
-          />
+          <MemberList members={members} isAdmin={isAdmin} currentUserId={user.id} teamOwnerId={team.owner_id} onMembersChanged={loadMembers} />
         )}
         {activeTab === 'invites' && (
-          <InviteManager
-            teamId={team.id}
-            isAdmin={isAdmin}
-            userId={user.id}
-          />
+          <InviteManager teamId={team.id} isAdmin={isAdmin} userId={user.id} />
         )}
         {activeTab === 'channels' && (
-          <ChannelManager
-            teamId={team.id}
-            isAdmin={isAdmin}
-            userId={user.id}
-          />
+          <ChannelManager teamId={team.id} isAdmin={isAdmin} userId={user.id} />
         )}
         {activeTab === 'groups' && (
-          <GroupManager
-            teamId={team.id}
-            isAdmin={isAdmin}
-            userId={user.id}
-            members={members}
-          />
+          <GroupManager teamId={team.id} isAdmin={isAdmin} userId={user.id} members={members} />
+        )}
+        {activeTab === 'collections' && (
+          <CollectionManager teamId={team.id} isAdmin={isAdmin} userId={user.id} />
         )}
         {activeTab === 'settings' && (
-          <TeamSettings
-            team={team}
-            isOwner={myRole === 'owner'}
-            onTeamUpdated={onTeamUpdated}
-          />
+          <TeamSettings team={team} isOwner={myRole === 'owner'} onTeamUpdated={onTeamUpdated} />
         )}
       </div>
     </div>

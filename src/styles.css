@@ -1673,3 +1673,7 @@ textarea {
 .mention-popup { position: absolute; bottom: 100%; left: 12px; right: 12px; background: #161618; border: 1px solid #1f2024; border-radius: 8px; padding: 4px; margin-bottom: 4px; box-shadow: 0 -4px 16px rgba(0,0,0,0.3); }
 .mention-option { display: block; width: 100%; padding: 6px 10px; border: none; background: transparent; color: #bbb; font-size: 12px; cursor: pointer; text-align: left; border-radius: 4px; font-family: inherit; }
 .mention-option:hover { background: rgba(34,197,94,0.08); color: #22c55e; }
+
+.collection-count { font-size: 9px; color: #555; margin-left: 4px; }
+.collection-remove-btn { display: block; margin: 2px 0 4px 4px; padding: 2px 8px; background: none; border: 1px solid transparent; border-radius: 4px; color: #444; font-size: 10px; cursor: pointer; font-family: inherit; }
+.collection-remove-btn:hover { color: #ef4444; border-color: rgba(239,68,68,0.2); }

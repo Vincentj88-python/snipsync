@@ -3,7 +3,7 @@ import {
   getMyTeams, getChannels, getChannelClips, getTeamMembers, getTeamGroups,
   postToChannel, subscribeToChannel, addClip, parseMentions, createMentions,
   getDirectClips, sendDirectClip, getUnreadMentionCount, getMyMentions,
-  markMentionRead,
+  markMentionRead, getCollections, getCollectionClips, removeFromCollection,
 } from '../lib/supabase'
 import { detectType } from '../lib/utils'
 import ClipCard from './ClipCard'
@@ -21,9 +21,12 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
   const [mentionSuggestions, setMentionSuggestions] = useState([])
   const [showMentions, setShowMentions] = useState(false)
   const [unreadMentions, setUnreadMentions] = useState(0)
-  const [viewMode, setViewMode] = useState('channels') // 'channels' | 'mentions' | 'direct'
+  const [viewMode, setViewMode] = useState('channels') // 'channels' | 'mentions' | 'direct' | 'collections'
   const [mentions, setMentions] = useState([])
   const [directClips, setDirectClips] = useState([])
+  const [collections, setCollections] = useState([])
+  const [activeCollectionId, setActiveCollectionId] = useState(null)
+  const [collectionClips, setCollectionClips] = useState([])
   const unsubChannelRef = useRef(null)
 
   // Load teams
@@ -171,6 +174,30 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
     setDirectClips(data)
   }
 
+  // Load collections
+  const loadCollections = async () => {
+    if (!activeTeam) return
+    const data = await getCollections(activeTeam.teams.id)
+    setCollections(data)
+    if (data.length > 0 && !activeCollectionId) {
+      setActiveCollectionId(data[0].id)
+      const clips = await getCollectionClips(data[0].id)
+      setCollectionClips(clips)
+    }
+  }
+
+  const handleSelectCollection = async (id) => {
+    setActiveCollectionId(id)
+    const clips = await getCollectionClips(id)
+    setCollectionClips(clips)
+  }
+
+  const handleRemoveFromCollection = async (collectionClipId) => {
+    await removeFromCollection(collectionClipId)
+    const clips = await getCollectionClips(activeCollectionId)
+    setCollectionClips(clips)
+  }
+
   if (teams.length === 0) {
     return (
       <div className="team-empty">
@@ -213,6 +240,9 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
         </button>
         <button className={`team-tab ${viewMode === 'direct' ? 'team-tab--active' : ''}`} onClick={() => { setViewMode('direct'); loadDirectClips() }}>
           Direct
+        </button>
+        <button className={`team-tab ${viewMode === 'collections' ? 'team-tab--active' : ''}`} onClick={() => { setViewMode('collections'); loadCollections() }}>
+          Collections
         </button>
       </div>
 
@@ -332,6 +362,62 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
             ))
           )}
         </div>
+      )}
+
+      {viewMode === 'collections' && (
+        <>
+          {collections.length === 0 ? (
+            <div className="team-clip-list">
+              <div className="team-clip-empty">
+                No collections yet. Create them from the team portal.
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="channel-bar">
+                {collections.map((col) => (
+                  <button
+                    key={col.id}
+                    className={`channel-btn ${col.id === activeCollectionId ? 'channel-btn--active' : ''}`}
+                    onClick={() => handleSelectCollection(col.id)}
+                  >
+                    📌 {col.name}
+                    <span className="collection-count">{col.clipCount}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="team-clip-list">
+                {collectionClips.length === 0 ? (
+                  <div className="team-clip-empty">This collection is empty. Add clips from any channel.</div>
+                ) : (
+                  collectionClips.map((cc) => (
+                    <div key={cc.id} className="team-clip-wrapper">
+                      <span className="team-clip-sender">
+                        Added by {cc.profiles?.display_name || cc.profiles?.email || 'Unknown'}
+                      </span>
+                      {cc.clips && (
+                        <ClipCard
+                          clip={cc.clips}
+                          onCopy={() => navigator.clipboard.writeText(cc.clips.content)}
+                          onOpenUrl={onOpenUrl}
+                          onDownloadFile={onDownloadFile}
+                          onLightbox={onLightbox}
+                        />
+                      )}
+                      <button
+                        className="collection-remove-btn"
+                        onClick={() => handleRemoveFromCollection(cc.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   )
