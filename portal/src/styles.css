@@ -199,3 +199,22 @@ a { color: inherit; text-decoration: none; }
   .sidebar-footer { border-top: none; padding-top: 0; display: flex; align-items: center; gap: 8px; }
   .main { padding: 20px 16px; }
 }
+
+/* ── Billing ─────────────────────────── */
+
+.billing-view h3 { margin-bottom: 16px; }
+.billing-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.billing-card { background: rgba(255,255,255,0.02); border: 1px solid #1f2024; border-radius: 10px; padding: 16px; }
+.billing-card-label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin-bottom: 6px; }
+.billing-card-value { display: block; font-size: 20px; font-weight: 700; color: #e5e5e5; }
+.billing-card-hint { display: block; font-size: 11px; color: #444; margin-top: 4px; }
+.billing-status--active { color: #22c55e; }
+.billing-status--trial { color: #eab308; }
+.billing-status--past_due { color: #ef4444; }
+.billing-status--cancelled { color: #666; }
+.billing-trial-notice { background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.15); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.billing-trial-notice p { font-size: 13px; color: #eab308; margin-bottom: 12px; }
+.billing-warning { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.billing-warning p { font-size: 13px; color: #ef4444; }
+.billing-manage { margin-top: 24px; }
+.billing-manage p { margin-bottom: 12px; }

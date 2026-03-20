@@ -4,6 +4,7 @@ import InviteManager from '../components/InviteManager'
 import ChannelManager from '../components/ChannelManager'
 import GroupManager from '../components/GroupManager'
 import CollectionManager from '../components/CollectionManager'
+import BillingView from '../components/BillingView'
 import TeamSettings from '../components/TeamSettings'
 import { getTeamMembers, getMemberCount } from '../lib/supabase'
 
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'channels', label: 'Channels' },
   { id: 'groups', label: 'Groups' },
   { id: 'collections', label: 'Collections' },
+  { id: 'billing', label: 'Billing' },
   { id: 'settings', label: 'Settings' },
 ]
 
@@ -71,6 +73,9 @@ export default function TeamDashboard({ team, myRole, user, onTeamUpdated }) {
         )}
         {activeTab === 'collections' && (
           <CollectionManager teamId={team.id} isAdmin={isAdmin} userId={user.id} />
+        )}
+        {activeTab === 'billing' && (
+          <BillingView teamId={team.id} isOwner={myRole === 'owner'} />
         )}
         {activeTab === 'settings' && (
           <TeamSettings team={team} isOwner={myRole === 'owner'} onTeamUpdated={onTeamUpdated} />
