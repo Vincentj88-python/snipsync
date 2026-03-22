@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { sanitizeName, sanitizeText } from '../lib/sanitize'
 
 async function getCollections(teamId) {
   const { data } = await supabase
@@ -37,7 +38,7 @@ export default function CollectionManager({ teamId, isAdmin, userId }) {
   const handleCreate = async () => {
     if (!name.trim() || creating) return
     setCreating(true)
-    const { data } = await createCollection(teamId, name.trim(), description.trim() || null, userId)
+    const { data } = await createCollection(teamId, sanitizeName(name), sanitizeText(description) || null, userId)
     if (data) {
       setName('')
       setDescription('')

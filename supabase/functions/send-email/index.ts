@@ -1,6 +1,16 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Rate limiting: 5 requests per minute per user
+const rateBuckets = new Map<string, { count: number; resetAt: number }>()
+function checkRate(id: string): number | null {
+  const now = Date.now()
+  const b = rateBuckets.get(id)
+  if (!b || now > b.resetAt) { rateBuckets.set(id, { count: 1, resetAt: now + 60000 }); return null }
+  if (b.count >= 5) return Math.ceil((b.resetAt - now) / 1000)
+  b.count++; return null
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -140,6 +150,15 @@ serve(async (req) => {
         })
       }
       authUserEmail = user.email || null
+
+      // Rate limit user requests (not service-role)
+      const retryAfter = checkRate(user.id)
+      if (retryAfter !== null) {
+        return new Response(JSON.stringify({ error: 'Too many requests' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
+        })
+      }
     }
 
     const { to, template, data } = await req.json()

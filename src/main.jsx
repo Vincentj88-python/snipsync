@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import * as Sentry from '@sentry/electron/renderer'
 import App from './App'
+import ErrorBoundary from './components/ErrorBoundary'
 import './styles.css'
 
 if (import.meta.env.PROD) {
@@ -12,6 +13,8 @@ if (import.meta.env.PROD) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 )

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getGroups, createGroup, deleteGroup, addGroupMember, removeGroupMember } from '../lib/supabase'
+import { sanitizeName } from '../lib/sanitize'
 
 export default function GroupManager({ teamId, isAdmin, userId, members }) {
   const [groups, setGroups] = useState([])
@@ -20,7 +21,7 @@ export default function GroupManager({ teamId, isAdmin, userId, members }) {
   const handleCreate = async () => {
     if (!name.trim() || creating) return
     setCreating(true)
-    const { data } = await createGroup(teamId, name.trim(), userId)
+    const { data } = await createGroup(teamId, sanitizeName(name), userId)
     if (data) {
       setName('')
       setShowCreate(false)

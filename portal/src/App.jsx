@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase, signInWithGoogle, signOut, getMyTeams, createTeam } from './lib/supabase'
+import { sanitizeName } from './lib/sanitize'
 import TeamDashboard from './pages/TeamDashboard'
 import './styles.css'
 
@@ -30,7 +31,9 @@ export default function App() {
   }, [user])
 
   const loadTeams = async () => {
+    console.log('[Portal] Loading teams for user:', user.id, user.email)
     const data = await getMyTeams(user.id)
+    console.log('[Portal] Teams result:', JSON.stringify(data))
     setTeams(data)
     if (data.length > 0 && !activeTeamId) {
       setActiveTeamId(data[0].teams.id)
@@ -40,7 +43,9 @@ export default function App() {
   const handleCreateTeam = async () => {
     if (!newTeamName.trim() || creating) return
     setCreating(true)
-    const { data } = await createTeam(newTeamName.trim(), user.id)
+    console.log('[Portal] Creating team with owner_id:', user.id)
+    const { data, error } = await createTeam(sanitizeName(newTeamName), user.id)
+    console.log('[Portal] Create result:', data, error)
     if (data) {
       setNewTeamName('')
       setShowCreateTeam(false)

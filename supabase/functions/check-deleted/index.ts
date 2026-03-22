@@ -1,6 +1,15 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const rateBuckets = new Map<string, { count: number; resetAt: number }>()
+function checkRate(id: string): number | null {
+  const now = Date.now()
+  const b = rateBuckets.get(id)
+  if (!b || now > b.resetAt) { rateBuckets.set(id, { count: 1, resetAt: now + 60000 }); return null }
+  if (b.count >= 10) return Math.ceil((b.resetAt - now) / 1000)
+  b.count++; return null
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -32,6 +41,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const retryAfter = checkRate(authUser.id)
+    if (retryAfter !== null) {
+      return new Response(JSON.stringify({ error: 'Too many requests' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) },
       })
     }
 

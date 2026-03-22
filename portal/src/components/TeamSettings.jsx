@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { updateTeam, deleteTeam } from '../lib/supabase'
+import { sanitizeName } from '../lib/sanitize'
 
 export default function TeamSettings({ team, isOwner, onTeamUpdated }) {
   const [name, setName] = useState(team.name)
@@ -10,7 +11,7 @@ export default function TeamSettings({ team, isOwner, onTeamUpdated }) {
   const handleSave = async () => {
     setSaving(true)
     await updateTeam(team.id, {
-      name: name.trim(),
+      name: sanitizeName(name),
       max_seats: maxSeats ? parseInt(maxSeats) : null,
     })
     await onTeamUpdated()

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getChannels, createChannel, deleteChannel } from '../lib/supabase'
+import { sanitizeName, sanitizeText } from '../lib/sanitize'
 
 export default function ChannelManager({ teamId, isAdmin, userId }) {
   const [channels, setChannels] = useState([])
@@ -20,7 +21,7 @@ export default function ChannelManager({ teamId, isAdmin, userId }) {
   const handleCreate = async () => {
     if (!name.trim() || creating) return
     setCreating(true)
-    const { data } = await createChannel(teamId, name.trim(), description.trim() || null, userId)
+    const { data } = await createChannel(teamId, sanitizeName(name), sanitizeText(description) || null, userId)
     if (data) {
       setName('')
       setDescription('')
