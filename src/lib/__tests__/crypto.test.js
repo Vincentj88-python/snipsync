@@ -107,4 +107,25 @@ describe('encryption', () => {
     const enc2 = encryptClip(text, key2)
     expect(enc1.encryptedContent).not.toBe(enc2.encryptedContent)
   })
+
+  it('re-wrapped master key decrypts same clips', () => {
+    // Simulates password change: same master key, different wrapping
+    const masterKey = nacl.randomBytes(32)
+
+    // Encrypt a clip with master key
+    const { encryptedContent, nonce } = encryptClip('secret data', masterKey)
+
+    // "Change password" = re-wrap the same master key
+    const newNonce = nacl.randomBytes(24)
+    const newWrappingKey = nacl.randomBytes(32) // simulates new PBKDF2 output
+    const reWrapped = nacl.secretbox(masterKey, newNonce, newWrappingKey)
+
+    // Unwrap with new wrapping key
+    const unwrapped = nacl.secretbox.open(reWrapped, newNonce, newWrappingKey)
+    expect(unwrapped).toEqual(masterKey)
+
+    // Decrypt the original clip with the unwrapped key
+    const decrypted = decryptClip(encryptedContent, nonce, unwrapped)
+    expect(decrypted).toBe('secret data')
+  })
 })

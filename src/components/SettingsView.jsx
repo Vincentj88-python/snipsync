@@ -4,6 +4,7 @@ import {
   generateMasterKey,
   unlockMasterKey,
   unlockWithRecoveryPhrase,
+  changeVaultPassword,
   saveEncryptionKeys,
   getEncryptionSettings,
   getRecoveryKeyData,
@@ -130,7 +131,9 @@ export default function SettingsView({ subscription, usage, user, devices, clips
   const isPro = plan === 'pro'
   const [vaultPassword, setVaultPassword] = useState('')
   const [vaultPasswordConfirm, setVaultPasswordConfirm] = useState('')
-  const [vaultAction, setVaultAction] = useState(null) // 'setup' | 'unlock' | 'recover' | 'disable' | 'force-reset'
+  const [vaultAction, setVaultAction] = useState(null) // 'setup' | 'unlock' | 'recover' | 'disable' | 'force-reset' | 'change-password'
+  const [newPassword, setNewPassword] = useState('')
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
   const [recoverToDisable, setRecoverToDisable] = useState(false)
   const [vaultLoading, setVaultLoading] = useState(false)
   const [vaultError, setVaultError] = useState('')
@@ -312,9 +315,14 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                   All clips are encrypted end-to-end. Only your devices can read them.
                 </span>
               </div>
-              <button className="settings-export-btn" onClick={() => setVaultAction('disable')} style={{ color: '#ef4444', borderColor: '#3a1a1a' }}>
-                Disable
-              </button>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className="settings-export-btn" onClick={() => setVaultAction('change-password')}>
+                  Change password
+                </button>
+                <button className="settings-export-btn" onClick={() => setVaultAction('disable')} style={{ color: '#ef4444', borderColor: '#3a1a1a' }}>
+                  Disable
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -503,6 +511,71 @@ export default function SettingsView({ subscription, usage, user, devices, clips
         )}
 
         {/* Force reset — lost both password and recovery phrase */}
+        {vaultAction === 'change-password' && (
+          <div className="settings-vault-form">
+            <p className="settings-toggle-desc" style={{ marginBottom: '8px' }}>
+              Enter your current password, then choose a new one. Your clips stay encrypted — only the password changes.
+            </p>
+            <PasswordInput
+              placeholder="Current vault password"
+              value={vaultPassword}
+              onChange={(e) => { setVaultPassword(e.target.value); setVaultError('') }}
+              autoFocus
+            />
+            <PasswordInput
+              placeholder="New vault password (min 8 chars)"
+              value={newPassword}
+              onChange={(e) => { setNewPassword(e.target.value); setVaultError('') }}
+            />
+            <PasswordStrengthBar password={newPassword} />
+            <PasswordInput
+              placeholder="Confirm new password"
+              value={newPasswordConfirm}
+              onChange={(e) => { setNewPasswordConfirm(e.target.value); setVaultError('') }}
+            />
+            {vaultError && <p className="settings-vault-error">{vaultError}</p>}
+            <div className="settings-vault-actions">
+              <button
+                className="settings-upgrade-btn"
+                disabled={vaultLoading}
+                onClick={async () => {
+                  if (!vaultPassword) { setVaultError('Enter your current password'); return }
+                  if (newPassword.length < 8) { setVaultError('New password must be at least 8 characters'); return }
+                  if (newPassword !== newPasswordConfirm) { setVaultError('New passwords do not match'); return }
+                  if (newPassword === vaultPassword) { setVaultError('New password must be different from current'); return }
+                  setVaultLoading(true)
+                  try {
+                    const settings = await getEncryptionSettings(user.id)
+                    const result = await changeVaultPassword(
+                      vaultPassword, newPassword,
+                      settings.encrypted_master_key, settings.key_salt, settings.key_nonce
+                    )
+                    // Save new wrapped key (same master key, new wrapping)
+                    await saveEncryptionKeys(user.id, result.encryptedMasterKey, result.salt, result.nonce)
+                    // Update cached master key
+                    onEncryptionChange(true, result.masterKey)
+                    setVaultPassword('')
+                    setNewPassword('')
+                    setNewPasswordConfirm('')
+                    setVaultAction(null)
+                    setVaultError('')
+                  } catch (err) {
+                    setVaultError(err.message === 'Wrong vault password' ? 'Current password is incorrect' : err.message)
+                  }
+                  setVaultLoading(false)
+                }}
+              >
+                {vaultLoading ? 'Changing...' : 'Change password'}
+              </button>
+              <button className="settings-export-btn" onClick={() => {
+                setVaultAction(null); setVaultPassword(''); setNewPassword(''); setNewPasswordConfirm(''); setVaultError('')
+              }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {vaultAction === 'force-reset' && (
           <div className="settings-vault-form">
             <p className="settings-toggle-desc" style={{ color: '#ef4444', marginBottom: '8px' }}>

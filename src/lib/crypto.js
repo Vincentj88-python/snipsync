@@ -156,16 +156,40 @@ export function decryptClip(encryptedContent, nonceB64, masterKey) {
   return encodeUTF8(decrypted)
 }
 
+// ── Change vault password ───────────────────────────
+
+export async function changeVaultPassword(oldPassword, newPassword, encryptedMasterKeyB64, saltB64, nonceB64) {
+  // 1. Decrypt master key with old password
+  const masterKey = await unlockMasterKey(oldPassword, encryptedMasterKeyB64, saltB64, nonceB64)
+
+  // 2. Re-wrap master key with new password
+  const newSalt = nacl.randomBytes(16)
+  const newWrappingKey = await deriveKey(newPassword, newSalt)
+  const newNonce = nacl.randomBytes(24)
+  const newEncryptedMasterKey = nacl.secretbox(masterKey, newNonce, newWrappingKey)
+
+  return {
+    masterKey,
+    encryptedMasterKey: encodeBase64(newEncryptedMasterKey),
+    salt: encodeBase64(newSalt),
+    nonce: encodeBase64(newNonce),
+  }
+}
+
 // ── Profile encryption settings ─────────────────────
 
 export async function saveEncryptionKeys(userId, encryptedMasterKey, salt, nonce, encryptedRecoveryKey) {
-  return supabase.from('profiles').update({
+  const update = {
     encrypted_master_key: encryptedMasterKey,
     key_salt: salt,
     key_nonce: nonce,
     encryption_enabled: true,
-    encrypted_recovery_key: encryptedRecoveryKey || null,
-  }).eq('id', userId)
+  }
+  // Only update recovery key if explicitly provided (avoid wiping it on password change)
+  if (encryptedRecoveryKey !== undefined) {
+    update.encrypted_recovery_key = encryptedRecoveryKey || null
+  }
+  return supabase.from('profiles').update(update).eq('id', userId)
 }
 
 export async function getEncryptionSettings(userId) {
