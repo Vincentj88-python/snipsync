@@ -208,7 +208,7 @@ export async function encryptExistingClips(userId, masterKey) {
   for (const clip of clips) {
     if (clip.content === '[image]') {
       // Skip image placeholder content
-      await supabase.from('clips').update({ encrypted: true, nonce: '' }).eq('id', clip.id)
+      await supabase.from('clips').update({ encrypted: true, nonce: null }).eq('id', clip.id)
       count++
       continue
     }
@@ -239,6 +239,9 @@ export async function decryptAllClips(userId, masterKey) {
       continue
     }
     const plaintext = decryptClip(clip.content, clip.nonce, masterKey)
+    if (plaintext === '[decryption failed]') {
+      throw new Error(`Failed to decrypt clip ${clip.id}. Aborting to prevent data loss.`)
+    }
     await supabase.from('clips').update({
       content: plaintext,
       encrypted: false,

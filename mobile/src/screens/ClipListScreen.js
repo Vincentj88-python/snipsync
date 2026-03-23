@@ -146,14 +146,21 @@ export default function ClipListScreen({ user, onSignOut }) {
     setSending(true)
     const type = detectType(composeText.trim())
     let content = composeText.trim()
+    let clipEncrypted = false
+    let clipNonce = null
 
     if (encryptionEnabled && masterKeyRef.current) {
       const enc = encryptClip(content, masterKeyRef.current)
       content = enc.encryptedContent
+      clipEncrypted = true
+      clipNonce = enc.nonce
     }
 
     const { data } = await addClip(user.id, deviceId, content, type)
     if (data) {
+      if (clipEncrypted) {
+        await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
+      }
       setClips((prev) => [data, ...prev])
       setComposeText('')
       setShowCompose(false)

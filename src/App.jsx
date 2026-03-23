@@ -442,13 +442,19 @@ export default function App() {
 
       const type = detectType(text)
       let contentToSave = text
-      if (masterKeyRef.current) {
+      let clipEncrypted = false
+      let clipNonce = null
+      if (encryptionEnabled && masterKeyRef.current) {
         const enc = encryptClip(text, masterKeyRef.current)
         contentToSave = enc.encryptedContent
-        // Note: encrypted/nonce flags set separately for auto-captured clips
+        clipEncrypted = true
+        clipNonce = enc.nonce
       }
-      const { error } = await addClip(u.id, d, contentToSave, type)
-      if (!error) {
+      const { data, error } = await addClip(u.id, d, contentToSave, type)
+      if (!error && data) {
+        if (clipEncrypted) {
+          await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
+        }
         setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
       }
     })
