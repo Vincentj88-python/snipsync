@@ -61,4 +61,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeSnipFileListener: (handler) => {
     ipcRenderer.removeListener('snip-file', handler)
   },
+  setTrayState: (state) => ipcRenderer.invoke('set-tray-state', state),
 })

@@ -119,22 +119,45 @@ function toggleWindow() {
   }
 }
 
-function createTray() {
+function loadTrayIcon(name) {
   const baseDir = isDev
     ? path.join(__dirname, '..', 'public')
     : process.resourcesPath
-  const icon = nativeImage.createFromPath(path.join(baseDir, 'tray-icon.png'))
-
-  // Add @2x for Retina displays
-  const icon2x = nativeImage.createFromPath(path.join(baseDir, 'tray-icon@2x.png'))
+  const icon = nativeImage.createFromPath(path.join(baseDir, `tray-icon${name ? '-' + name : ''}.png`))
+  const icon2x = nativeImage.createFromPath(path.join(baseDir, `tray-icon${name ? '-' + name : ''}@2x.png`))
   if (!icon2x.isEmpty()) {
     icon.addRepresentation({ scaleFactor: 2.0, buffer: icon2x.toPNG() })
   }
-
-  if (process.platform === 'darwin') {
+  // Only set template for the default (black) icon — colored icons should show as-is
+  if (process.platform === 'darwin' && !name) {
     icon.setTemplateImage(true)
   }
+  return icon
+}
 
+function setTrayState(state) {
+  if (!tray) return
+  switch (state) {
+    case 'syncing':
+      tray.setImage(loadTrayIcon('sync'))
+      tray.setToolTip('SnipSync — Syncing...')
+      break
+    case 'offline':
+      tray.setImage(loadTrayIcon('offline'))
+      tray.setToolTip('SnipSync — Offline')
+      break
+    case 'error':
+      tray.setImage(loadTrayIcon('error'))
+      tray.setToolTip('SnipSync — Error')
+      break
+    default:
+      tray.setImage(loadTrayIcon(''))
+      tray.setToolTip('SnipSync')
+  }
+}
+
+function createTray() {
+  const icon = loadTrayIcon('')
   tray = new Tray(icon)
   tray.setToolTip('SnipSync')
 
@@ -324,6 +347,10 @@ function registerIpcHandlers() {
       clearInterval(clipboardWatcher)
       clipboardWatcher = null
     }
+  })
+
+  ipcMain.handle('set-tray-state', (_event, state) => {
+    setTrayState(state)
   })
 }
 

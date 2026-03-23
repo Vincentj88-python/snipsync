@@ -84,6 +84,7 @@ export default function App() {
   const [autoCapture, setAutoCapture] = useState(() => {
     return localStorage.getItem('snip_auto_capture') === 'true'
   })
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const unsubRef = useRef(null)
   const handleSendRef = useRef(null)
   const pendingDeleteRef = useRef(null)
@@ -205,6 +206,7 @@ export default function App() {
             if (isNewProfile) sendEmail(user.email, 'welcome-back')
           } else if (isNewProfile) {
             sendEmail(user.email, 'welcome')
+            setShowOnboarding(true)
           }
         }
 
@@ -316,6 +318,7 @@ export default function App() {
         setUsage({ clips: clipCount, devices: deviceCount })
 
         setIsConnected(true)
+        window.electronAPI?.setTrayState('default')
 
         const unsub = subscribeToClips(
           user.id,
@@ -345,6 +348,7 @@ export default function App() {
         unsubRef.current = unsub
       } catch {
         setIsConnected(false)
+        window.electronAPI?.setTrayState('offline')
       }
     }
 
@@ -893,7 +897,40 @@ export default function App() {
         </div>
       </div>
 
-      {view === 'teams' ? (
+      {showOnboarding ? (
+        <div className="onboarding">
+          <div className="onboarding-content">
+            <div className="onboarding-icon">&#128075;</div>
+            <h2 className="onboarding-title">Welcome to SnipSync!</h2>
+            <p className="onboarding-desc">Your clipboard now syncs across all your devices in real time.</p>
+
+            <div className="onboarding-device">
+              <span className="onboarding-label">This device</span>
+              <span className="onboarding-device-name">{deviceName || 'Unknown Device'}</span>
+              <span className="onboarding-device-platform">{mapPlatform(platform)}</span>
+            </div>
+
+            <div className="onboarding-tips">
+              <div className="onboarding-tip">
+                <span className="onboarding-tip-icon">&#9889;</span>
+                <span>Press <kbd>Cmd+Shift+V</kbd> from anywhere to snip your clipboard</span>
+              </div>
+              <div className="onboarding-tip">
+                <span className="onboarding-tip-icon">&#128274;</span>
+                <span>Enable encryption in Settings for zero-knowledge privacy</span>
+              </div>
+              <div className="onboarding-tip">
+                <span className="onboarding-tip-icon">&#128187;</span>
+                <span>Install SnipSync on another device to start syncing</span>
+              </div>
+            </div>
+
+            <button className="onboarding-btn" onClick={() => setShowOnboarding(false)}>
+              Got it, let's go
+            </button>
+          </div>
+        </div>
+      ) : view === 'teams' ? (
         <TeamView
           user={user}
           deviceId={deviceId}

@@ -45,14 +45,14 @@
       "package.json"
     ],
     "extraResources": [
-      {
-        "from": "public/tray-icon.png",
-        "to": "tray-icon.png"
-      },
-      {
-        "from": "public/tray-icon@2x.png",
-        "to": "tray-icon@2x.png"
-      }
+      { "from": "public/tray-icon.png", "to": "tray-icon.png" },
+      { "from": "public/tray-icon@2x.png", "to": "tray-icon@2x.png" },
+      { "from": "public/tray-icon-sync.png", "to": "tray-icon-sync.png" },
+      { "from": "public/tray-icon-sync@2x.png", "to": "tray-icon-sync@2x.png" },
+      { "from": "public/tray-icon-offline.png", "to": "tray-icon-offline.png" },
+      { "from": "public/tray-icon-offline@2x.png", "to": "tray-icon-offline@2x.png" },
+      { "from": "public/tray-icon-error.png", "to": "tray-icon-error.png" },
+      { "from": "public/tray-icon-error@2x.png", "to": "tray-icon-error@2x.png" }
     ],
     "mac": {
       "target": "dmg",

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security — SnipSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+  <nav class="nav nav--solid">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <svg class="nav-logo-mark" width="28" height="28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M 30 10 L 90 10 L 120 40 L 100 60 L 120 80 L 90 110 L 30 110 L 0 80 L 20 60 L 0 40 Z" stroke="#22c55e" stroke-width="2" stroke-linejoin="miter" fill="none" opacity="0.3"/><path d="M 30 20 L 90 20 L 110 40 L 90 60 L 110 80 L 90 100 L 30 100 L 10 80 L 30 60 L 10 40 Z" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="miter" fill="none"/><g stroke-linecap="square"><path d="M 85 40 L 50 40 L 30 60 L 90 60 L 70 80 L 35 80" stroke="#22c55e" stroke-width="14" stroke-linejoin="miter" fill="none"/><polygon points="85,24 108,40 85,56" fill="#22c55e"/><polygon points="35,64 12,80 35,96" fill="#22c55e"/></g></svg>
+        <span class="nav-logo-text">SnipSync</span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="legal-main">
+    <h1>Security</h1>
+    <p class="legal-updated">How SnipSync protects your data</p>
+
+    <h2>Zero-knowledge encryption</h2>
+    <p>When you enable end-to-end encryption in SnipSync, your clips are encrypted on your device before they ever leave it. The SnipSync server stores only encrypted blobs. We cannot read, access, or recover your encrypted clips. Only you hold the decryption key.</p>
+
+    <h2>How it works</h2>
+    <div class="security-flow">
+      <div class="security-step">
+        <span class="security-step-num">1</span>
+        <div>
+          <strong>You set a vault password</strong>
+          <p>A separate password you choose — never sent to our servers.</p>
+        </div>
+      </div>
+      <div class="security-step">
+        <span class="security-step-num">2</span>
+        <div>
+          <strong>Master key is generated</strong>
+          <p>A random 256-bit master key is created locally on your device.</p>
+        </div>
+      </div>
+      <div class="security-step">
+        <span class="security-step-num">3</span>
+        <div>
+          <strong>Master key is wrapped</strong>
+          <p>Your vault password is run through PBKDF2 (600,000 iterations, SHA-256) to derive a wrapping key. The master key is then encrypted with this wrapping key.</p>
+        </div>
+      </div>
+      <div class="security-step">
+        <span class="security-step-num">4</span>
+        <div>
+          <strong>Clips are encrypted</strong>
+          <p>Each clip gets its own random nonce. Content is encrypted with the master key using XSalsa20-Poly1305 (NaCl secretbox). Only the encrypted blob is sent to the server.</p>
+        </div>
+      </div>
+      <div class="security-step">
+        <span class="security-step-num">5</span>
+        <div>
+          <strong>Other devices decrypt locally</strong>
+          <p>On another device, you enter your vault password. It derives the same wrapping key, decrypts the master key, and decrypts your clips — all locally.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Algorithms</h2>
+    <table class="security-table">
+      <tr><td>Symmetric encryption</td><td>XSalsa20-Poly1305 (NaCl secretbox via tweetnacl-js)</td></tr>
+      <tr><td>Key derivation</td><td>PBKDF2 with 600,000 iterations, SHA-256</td></tr>
+      <tr><td>Master key</td><td>256-bit random (nacl.randomBytes)</td></tr>
+      <tr><td>Per-clip nonce</td><td>192-bit random (24 bytes)</td></tr>
+      <tr><td>Recovery phrase</td><td>12 words from a 256-word list (96-bit entropy)</td></tr>
+      <tr><td>Transport</td><td>TLS 1.3 (Supabase enforced)</td></tr>
+    </table>
+
+    <h2>What we can see</h2>
+    <table class="security-table">
+      <tr><td>Clip content</td><td class="security-no">Encrypted blob only</td></tr>
+      <tr><td>Clip type (link, note, code)</td><td>Yes — needed for filtering</td></tr>
+      <tr><td>Timestamps</td><td>Yes — needed for sorting</td></tr>
+      <tr><td>Device name</td><td>Yes — needed for device badges</td></tr>
+      <tr><td>Your vault password</td><td class="security-no">Never leaves your device</td></tr>
+      <tr><td>Your master key</td><td class="security-no">Never leaves your device</td></tr>
+    </table>
+
+    <h2>Infrastructure</h2>
+    <ul>
+      <li>Data hosted on <strong>Supabase</strong> (Postgres) in the EU region</li>
+      <li>All connections enforced over <strong>TLS 1.3</strong></li>
+      <li>Row Level Security (RLS) policies on every database table — users can only access their own data</li>
+      <li>Edge functions authenticated via JWT — no unauthenticated access</li>
+      <li>Rate limiting on all API endpoints</li>
+      <li>Electron app runs with <strong>sandbox mode</strong> enabled, context isolation, and no node integration</li>
+      <li>Content Security Policy restricts script execution and network connections</li>
+    </ul>
+
+    <h2>Responsible disclosure</h2>
+    <p>If you find a security vulnerability in SnipSync, please email <strong>vincentjacobs7@gmail.com</strong> with details. We take all reports seriously and will respond within 48 hours.</p>
+
+    <h2>Open source</h2>
+    <p>SnipSync's encryption implementation lives in <code>src/lib/crypto.js</code> and uses <a href="https://tweetnacl.js.org/" target="_blank" rel="noopener">tweetnacl-js</a>, an audited, minimal NaCl implementation. You can review the code on <a href="https://github.com/Vincentj88-python/snipsync" target="_blank" rel="noopener">GitHub</a>.</p>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-inner">
+      <div class="foot-left">
+        <p class="foot-copy">&copy; 2026 Vincent Jacobs. All rights reserved.</p>
+      </div>
+      <div class="foot-right">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="security.html">Security</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

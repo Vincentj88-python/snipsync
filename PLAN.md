@@ -19,7 +19,7 @@ The fastest way to move information between devices and people.
 ### Free
 
 - 2 devices (includes browser extension)
-- 30 clips/month (resets 1st, deleting doesn't restore counter)
+- Unlimited clips
 - 7-day history
 - Text clips only (no images or files)
 

@@ -714,6 +714,17 @@ export default function SettingsView({ subscription, usage, user, devices, clips
       <div className="settings-section settings-section--footer">
         <span className="settings-app-version">SnipSync v0.3.1</span>
         <a
+          className="settings-link settings-link--feedback"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault()
+            const url = 'mailto:vincentjacobs7@gmail.com?subject=SnipSync Feedback'
+            window.electronAPI ? window.electronAPI.openUrl(url) : window.open(url, '_blank')
+          }}
+        >
+          Send feedback
+        </a>
+        <a
           className="settings-link"
           href="#"
           onClick={(e) => {
