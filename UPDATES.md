@@ -1,5 +1,204 @@
 # Cross-Snip Updates
 
+## v0.3.1 Post-Release — Teams, Production Hardening, Website Overhaul (2026-03-23)
+
+### Free Tier Change
+
+- **Unlimited clips with 7-day history** — Free tier no longer has a 30 clips/month cap. All free users now get unlimited clips, but only the last 7 days of history are kept. This removes friction for new users and simplifies the value proposition.
+- **30-clip counter removed** — The monthly clip counter, reset-on-1st logic, and counter-display UI have been removed from Settings and all enforcement logic.
+
+### Website Overhaul
+
+- **Comparison table** — New section on the marketing site comparing SnipSync to alternatives (clipboard managers, manual sharing, etc.)
+- **Founder section** — Personal founder story added to the homepage
+- **Security page** — Dedicated `/security` page covering encryption architecture, zero-knowledge design, and responsible disclosure
+- **Waitlist mode** — App not publicly listed yet; website is in waitlist mode with CTA to join waitlist rather than download
+
+### Onboarding Flow
+
+- **First-time user onboarding** — New users see a guided onboarding sequence on first launch, walking through core features: sending a clip, syncing across devices, encryption, and the tray icon
+
+### In-App Feedback
+
+- **Feedback button in Settings** — Users can submit feedback without leaving the app. Feedback goes to a configured endpoint/form.
+
+### Tray Icon States
+
+- **Three distinct states**: green dot (connected and syncing), gray (offline / no connection), red (error state — auth failure, sync error, etc.)
+- **Real-time state changes**: icon updates reactively when connectivity or auth status changes
+
+### Production Hardening
+
+- **14 database indexes** — Performance indexes added across all high-traffic query paths: clips (user_id, created_at, type, encrypted), devices (user_id, machine_id), subscriptions (user_id), and all 12 teams tables
+- **Input sanitization** — All user-supplied text fields sanitized before write (clips content, team names, channel names, collection names)
+- **React error boundaries** — Added at app root and around key sections (clip list, settings, channels view) so a component crash does not take down the whole app
+- **Rate limiting on all edge functions** — All 4 edge functions (ls-webhook, record-deletion, check-deleted, send-email) now enforce per-IP and per-user rate limits
+- **Health check endpoint** — GET `/health` on the main Supabase edge function deployment returns 200 with uptime info; used for monitoring
+- **Env var validation skips in CI** — Startup env var validation now detects test/CI environment and skips; fixes GitHub Actions build failures when Supabase keys are not available during unit test runs
+
+### Teams Feature — Merged to Main
+
+All Teams work merged from feature branch to main. Not yet publicly released but fully present on main.
+
+**Database — 12 new tables:**
+
+| Table | Purpose |
+|-------|---------|
+| `teams` | Team name, owner, metadata |
+| `team_members` | Users in a team with roles (owner/admin/member) |
+| `team_invites` | Invite links with optional expiry and use limits |
+| `channels` | Named clip feeds within a team (#general auto-created) |
+| `channel_clips` | Clips posted to a channel |
+| `direct_clips` | Clips sent directly to a specific teammate |
+| `groups` | Named groups within a team (e.g. @design, @engineering) |
+| `group_members` | Users in a group |
+| `clip_mentions` | @user and @group mentions on clips |
+| `collections` | Shared persistent pinned clip sets |
+| `collection_clips` | Clips added to a collection |
+| team billing support | Per-seat subscription tracking |
+
+**Portal (`portal.snipsync.xyz`):**
+- React + Vite app scaffolded in `/portal` directory
+- Vercel deployment configured for portal.snipsync.xyz
+- Google sign-in (same Supabase auth as desktop app)
+- Dashboard: team overview, member list with role badges
+- Invite management: generate link, view active invites, revoke
+- Member management: promote/demote roles, remove from team
+- Channel and group management views
+- Billing view: seat count, subscription status
+
+**Channels:**
+- Create and delete channels (admin/owner only)
+- Post a clip to a channel (select when sending, or default to #general)
+- Realtime subscription per channel via Supabase Realtime
+- Subscribes only to the active channel — no unnecessary subscriptions
+- #general channel auto-created via database trigger on team creation
+
+**@Mentions:**
+- `@` in clip input triggers autocomplete showing team members and groups
+- Parsed before save: creates `clip_mentions` records per mention
+- Mentions filter in clip list: "Clips that mention me"
+- Unread badge count for unread mentions
+
+**Direct Send:**
+- "Send to..." action on any clip
+- Teammate picker from team roster
+- Recipient sees clip appear in real time via Realtime subscription
+- Read receipt: `read_at` timestamp updated when receiver opens
+- Direct messages view in app
+
+**Collections:**
+- Create named collections (admin/owner)
+- Add any clip to one or more collections
+- Collections browsable in desktop app
+- Persistent — not tied to history window
+
+**Team Billing:**
+- Lemon Squeezy product configured for Team tier ($8.99/seat/mo)
+- Owner manages seat count
+- Webhook: subscription created/updated/cancelled/payment_failed
+- Edge function: validates team subscription, enforces seat limits
+- When user joins team, personal subscription paused (covered by team plan)
+- If user leaves team, personal subscription resumes or falls to free
+
+**RLS Fix:**
+- Portal RLS policies initially caused infinite recursion (policy on teams table read from team_members which in turn checked teams)
+- Fixed by wrapping membership checks in `SECURITY DEFINER` functions that bypass RLS, called from policies
+
+### CI Fix
+
+- Env var validation at app startup now detects `NODE_ENV=test` and skips the check, preventing GitHub Actions from failing when Supabase keys are absent during unit test runs
+
+---
+
+## v0.3.1 — Security Hardening, Dependency Upgrades, Logo Rebrand (2026-03-20)
+
+### Logo Rebrand
+
+- New SnipSync logo (S-arrow hexagon design) integrated across entire project
+- App icon, tray icons, website nav/footer, favicon, OG image, and email headers all updated
+- Tray icons regenerated with proper transparency via sharp
+
+### Security — Critical
+
+- JWT auth added to all 3 edge functions (record-deletion, send-email, check-deleted)
+- Users can only delete own account / email own address / check own deletion status
+- send-email supports dual-mode: user JWT or service-role key (for internal calls)
+- URL protocol validation added in browser mode
+
+### Security — High
+
+- Electron sandbox and webSecurity enabled
+- Permission denial handlers for camera, microphone, and geolocation
+- PBKDF2 iterations increased from 100K to 600K with backward compatibility (tries 600K then 100K)
+- Master key cleared from memory on sign-out, on beforeunload, and after 30-minute auto-lock
+- File upload path sanitization
+- Signed URL expiry reduced from 1 hour to 15 minutes
+- Constant-time HMAC verification in ls-webhook (prevents timing attacks)
+- Recovery phrase wordlist expanded from 64 to 256 words (increased entropy)
+
+### Security — Medium
+
+- Vault unlock rate limiting with exponential backoff
+- CSP hardened: object-src none, base-uri self, form-action self
+- Vercel security headers added: X-Frame-Options, HSTS, and others
+- Error messages sanitized in edge functions to prevent information leakage
+
+### Dependency Upgrades
+
+- Electron 28 → 35, electron-builder 24 → 26, @sentry/electron 4 → 5
+- Vite 5 → 6, Vitest 1 → 2, @vitejs/plugin-react 4 → 5
+- Sentry import fixed for v5 (require @sentry/electron/main)
+- vite.config.js renamed to vite.config.mjs for ESM compatibility
+- Vulnerability audit: 16 vulns (5 high) reduced to 5 (all moderate, dev-only)
+
+### Pricing
+
+- Pro: $3.99/mo → $4.99/mo, $29/yr → $39/yr
+- Team: $6.99/seat/mo → $8.99/seat/mo
+- Website pricing section redesigned: Pro hero card, cleaner layout structure
+- Upgrade note added to website: "Upgrade to Pro from inside the app via Settings"
+
+### Bug Fixes
+
+- **OAuth**: Reverted custom state parameter — it conflicted with Supabase's internal CSRF state handling. Simple callback approach adopted; Supabase handles CSRF internally.
+- **Encryption**: Added re-check before enabling encryption to prevent master key overwrite when enabling on a second device.
+
+### Mobile — React Native Phase 1 (in progress)
+
+- React Native project scaffolded in `mobile/` folder (bare workflow)
+- All Phase 1 dependencies installed: Supabase, tweetnacl, react-native-quick-crypto, Google Sign-In, etc.
+- Adapted lib files from desktop: supabase.js, crypto.js, utils.js ported for React Native
+- Built screens: SignInScreen (with app icon), ClipListScreen (realtime, vault unlock, compose, filters)
+- Built ClipCard component
+- Navigation: AppNavigator with auth gating (signed-out vs signed-in stack)
+- Google OAuth: configured with iOS client ID, PKCE flow via Supabase signInWithIdToken
+- Deep linking: snipsync:// URL scheme registered, AppDelegate bridged for RCTLinkingManager
+- Sign-in flow working end-to-end on physical device
+- PBKDF2 backward compatibility: tries 600K iterations first, falls back to 100K for legacy keys
+- Vault unlock on physical iPhone currently being tested
+
+### Files Changed
+
+| File | What changed |
+|------|-------------|
+| `electron/main.js` | Sandbox + webSecurity, permission handlers, tray icon states |
+| `electron/preload.js` | No changes |
+| `src/lib/crypto.js` | PBKDF2 600K with backward compat, auto-lock timer, key clear on sign-out |
+| `src/lib/supabase.js` | JWT-authenticated edge function calls |
+| `src/components/SettingsView.jsx` | Pricing display, v0.3.1 |
+| `supabase/functions/record-deletion/index.ts` | JWT auth added |
+| `supabase/functions/send-email/index.ts` | Dual-mode auth (JWT or service-role) |
+| `supabase/functions/check-deleted/index.ts` | JWT auth added |
+| `supabase/functions/ls-webhook/index.ts` | Constant-time HMAC |
+| `website/index.html` | Pricing update, logo |
+| `website/vercel.json` | Security headers (X-Frame-Options, HSTS, etc.) |
+| `vite.config.mjs` | Renamed from .js for ESM compat |
+| `package.json` | All dependency upgrades |
+| `mobile/` | New directory — full React Native Phase 1 scaffold |
+
+---
+
 ## v0.3.0 — Production-Ready Overhaul
 
 ### UI/UX

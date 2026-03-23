@@ -23,6 +23,8 @@ The fastest way to move information between devices and people.
 - 7-day history
 - Text clips only (no images or files)
 
+> Note: Free tier was changed from 30 clips/month to unlimited clips with 7-day history as of 2026-03-23.
+
 ### Pro ($4.99/mo or $39/yr)
 
 - Unlimited devices
@@ -100,6 +102,44 @@ Shipped 2026-03-18:
 - [x] Website updated with v0.3.0 features and pricing
 - [x] Mac DMG + Windows EXE built and pushed to GitHub Releases
 
+### Phase 2.6: Security Hardening + Dependency Upgrades — COMPLETE (v0.3.1)
+
+Shipped 2026-03-20:
+
+- [x] JWT auth on all edge functions (scoped to own data; send-email has service-role bypass)
+- [x] Electron sandbox + webSecurity enabled; permission denial handlers
+- [x] PBKDF2 upgraded 100K → 600K iterations with backward compat (tries 600K then 100K)
+- [x] Master key auto-cleared: sign-out, beforeunload, 30-min auto-lock
+- [x] File upload path sanitization; signed URL expiry reduced 1hr → 15min
+- [x] Constant-time HMAC in ls-webhook; recovery wordlist expanded 64 → 256 words
+- [x] Vault unlock rate limiting with exponential backoff
+- [x] CSP hardened (object-src none, base-uri self, form-action self)
+- [x] Vercel security headers (X-Frame-Options, HSTS, etc.)
+- [x] Electron 28 → 35, electron-builder 24 → 26, @sentry/electron 4 → 5
+- [x] Vite 5 → 6, Vitest 1 → 2, @vitejs/plugin-react 4 → 5
+- [x] Vulnerability audit: 16 vulns (5 high) → 5 (moderate, dev-only)
+- [x] Logo rebranded: S-arrow hexagon design across app, tray, website, emails
+- [x] Pricing updated: Pro $4.99/mo or $39/yr, Team $8.99/seat/mo
+- [x] v0.3.1 released (Mac DMG + Windows EXE)
+
+### Phase 2.7: Production Hardening + Website + Teams Foundation — COMPLETE (2026-03-23)
+
+Shipped 2026-03-23 (on main, version still v0.3.1):
+
+- [x] Free tier changed: unlimited clips with 7-day history (removed 30 clips/month cap)
+- [x] Website overhaul: comparison table, founder section, security page, waitlist mode
+- [x] First-time user onboarding flow
+- [x] In-app feedback button in Settings
+- [x] Tray icon states: green (syncing), gray (offline), red (error)
+- [x] 14 database indexes added for query performance
+- [x] Input sanitization on all user-supplied fields
+- [x] React error boundaries added throughout app
+- [x] Rate limiting on all edge functions
+- [x] Health check endpoint
+- [x] Env var validation skips during CI/CD tests (CI fix)
+- [x] Teams feature merged to main: 12 tables, admin portal, channels, @mentions, direct send, collections, team billing
+- [x] Portal RLS fixed: security definer functions to avoid recursion
+
 ### Phase 3: Browser Extension — IN PROGRESS
 
 Goal: Expand reach — browser extension is zero-friction install, works on any OS
@@ -169,42 +209,31 @@ Remaining:
 - [ ] Full encryption setup on mobile (set vault password, recovery phrase)
 - [ ] Biometric unlock (Face ID / Touch ID) for vault
 
-### Phase 4: Team Features (v1.0.0)
+### Phase 4: Team Features (v1.0.0) — DATABASE + PORTAL FOUNDATION COMPLETE
 
 Goal: Launch team tier — this is where real revenue comes from
 
-Tasks:
+Database and portal foundation merged to main on 2026-03-23. Portal phases remaining:
 
-1. Team infrastructure:
-   - `teams` table (id, name, owner_id, created_at)
-   - `team_members` table (team_id, user_id, role: 'owner'|'admin'|'member', invited_at, accepted_at)
-   - `channels` table (id, team_id, name, description, created_by)
-   - `channel_clips` table (id, channel_id, clip_id, sent_by, created_at)
-   - Invite flow: owner sends invite email → recipient clicks link → joins team
-   - RLS: team members can only see their team's channels and clips
+Completed (merged to main):
+- [x] All 12 tables: teams, team_members, team_invites, channels, channel_clips, direct_clips, groups, group_members, clip_mentions, collections, collection_clips, team billing
+- [x] RLS policies on all tables (security definer functions fix recursion)
+- [x] Admin portal scaffolded at portal.snipsync.xyz (React + Vite + Vercel)
+- [x] Channels: create/delete, post clips, realtime sync, #general default
+- [x] @mentions: autocomplete, clip_mentions records, unread badge, mentions filter
+- [x] Direct send: send clip to teammate, direct messages view
+- [x] Collections: team-shared persistent pinned clip sets
+- [x] Team billing: per-seat via Lemon Squeezy, owner manages seats
 
-2. Channels:
-   - Create/delete channels within a team
-   - Post clips to a channel (select channel when sending, or default channel)
-   - Real-time updates via Supabase Realtime (subscribe to channel's clips)
-   - Channel list in sidebar or tab UI
-   - Performance: subscribe only to active channel, lazy-load channel history
-
-3. Direct send:
-   - "Send to..." button on any clip
-   - Pick a teammate from the team roster
-   - Recipient sees it appear instantly
-   - Notification dot/badge for unread direct clips
-   - Uses a `direct_clips` table (sender_id, receiver_id, clip_id)
-
-4. Shared collections:
-   - Persistent sets of pinned clips visible to entire team
-   - `collections` table (id, team_id, name)
-   - `collection_clips` table (collection_id, clip_id)
-
-5. Team billing:
-   - Per-seat pricing via Lemon Squeezy
-   - Owner manages seats
+Remaining:
+- [ ] Portal Phase B: full admin portal MVP (member list, invite management, role changes)
+- [ ] Portal Phase C: channel management UI in portal
+- [ ] Portal Phase D: group management UI in portal
+- [ ] Portal Phase F: billing management UI (seat count, subscription status)
+- [ ] Desktop app: channel sidebar/tab UI integrated
+- [ ] Desktop app: @mention autocomplete in clip input
+- [ ] Desktop app: direct messages view in app
+- [ ] Public launch: website team pricing page, Lemon Squeezy team product configured
 
 ### Phase 5: Expansion (v1.x+)
 
@@ -385,7 +414,7 @@ Tasks:
 
 On the free plan, Supabase pauses the project after 1 week of no API calls. All users would see the app go dead. **Upgrade to Pro before any public launch.**
 
-## Current Status (as of 2026-03-20)
+## Current Status (as of 2026-03-23)
 
 ### What's live
 - Desktop app v0.3.1 (Mac + Windows) — GitHub Release published
@@ -393,18 +422,28 @@ On the free plan, Supabase pauses the project after 1 week of no API calls. All 
 - Logo rebranded: S-arrow hexagon design across app, tray, website, emails
 - All major dependencies upgraded (Electron 35, Vite 6, Sentry 5)
 - Pricing updated: Pro $4.99/mo or $39/yr, Team $8.99/seat/mo
+- Free tier: unlimited clips with 7-day history (no longer 30 clips/month)
+- Tray icon states: green (syncing), gray (offline), red (error)
+- First-time user onboarding flow
+- In-app feedback button in Settings
+- 14 database indexes for query performance
+- Input sanitization, React error boundaries, rate limiting on all edge functions
+- Health check endpoint; env var validation skips in CI
 - E2E encryption with full UX (confirm, strength bar, recovery chips, vault overlay, force-reset)
 - File clips (drag-and-drop, up to 25MB on Pro) + image clips (up to 10MB on Pro)
 - Transactional emails via Resend (welcome, deletion, welcome-back)
 - Account deletion with full cleanup (profile + auth user + abuse prevention record)
 - Persistent UUID device identity (with legacy migration)
 - Chrome extension working (loaded unpacked, OAuth via chrome.identity)
-- Website at snipsync.xyz with waitlist — pricing updated for v0.3.1
+- Website at snipsync.xyz: waitlist mode, comparison table, founder section, security page
+- Teams feature merged to main: 12 tables, portal scaffolded, channels + @mentions + direct send + collections + billing implemented
+- Portal RLS: security definer functions
 - Sentry, Vercel Analytics, GitHub Actions all active
 - 27 tests passing
 
 ### In progress
 - Mobile app Phase 1 (React Native): scaffolded, sign-in working, vault unlock being tested on physical iPhone
+- Teams portal: Phase B (admin portal MVP) through Phase F (billing UI) remaining
 
 ### Waiting on
 - Lemon Squeezy account approval (need to record and send demo video)
@@ -419,6 +458,7 @@ On the free plan, Supabase pauses the project after 1 week of no API calls. All 
 - Connect Lemon Squeezy once approved (plug in checkout URL)
 - Purchase Apple Developer account (covers both Mac notarization and iOS App Store)
 - Browser extension: right-click context menu, Chrome Web Store publish
+- Teams portal: complete admin portal MVP (Phase B)
 
 ## Launch Checklist (before each phase)
 
