@@ -140,6 +140,25 @@ Shipped 2026-03-23 (on main, version still v0.3.1):
 - [x] Teams feature merged to main: 12 tables, admin portal, channels, @mentions, direct send, collections, team billing
 - [x] Portal RLS fixed: security definer functions to avoid recursion
 
+### Phase 2.8: Encryption Fixes + Password Change + UX Bugs — COMPLETE (2026-03-24)
+
+Shipped 2026-03-24 (on main, v0.3.1 rebuild):
+
+- [x] Auto-capture clips now correctly save `encrypted` flag + `nonce` to DB (was data-loss bug)
+- [x] Mobile compose clips now correctly save `nonce` to DB (same bug class)
+- [x] Batch decrypt throws on failure instead of corrupting clips with `'[decryption failed]'`
+- [x] Image clip nonce changed from `''` to `null` for DB consistency
+- [x] `changeVaultPassword()` function added to `src/lib/crypto.js`
+- [x] "Change password" button in Settings when encryption is active
+- [x] `saveEncryptionKeys()` no longer wipes recovery key when not explicitly passed
+- [x] Feedback button: `mailto:` protocol allowed in Electron URL handler
+- [x] Configurable global shortcut: stored in `userData/shortcut.txt`, ShortcutPicker in Settings, platform-aware display
+- [x] Team messages appear immediately: optimistic insert + Realtime dedup in channel views
+- [x] Encryption state sync across devices: polls every 30s, auto-locks/unlocks on remote change
+- [x] Team channel posts explicitly plaintext; `tryDecryptClip()` helper for all team render paths
+- [x] 11 new encryption tests (round-trip, wrong key, wrong nonce, randomness, password change, batch failure)
+- [x] Test suite: 38 tests total (was 27)
+
 ### Phase 3: Browser Extension — IN PROGRESS
 
 Goal: Expand reach — browser extension is zero-friction install, works on any OS
@@ -238,8 +257,8 @@ Remaining:
 ### Phase 5: Expansion (v1.x+)
 
 - Mobile companion app (React Native) — **IN PROGRESS as Phase 3.5** (Phase 1 sign-in working, vault in testing)
-- Global hotkey to summon SnipSync (Cmd+Shift+V or configurable)
-- ~~End-to-end encryption~~ — **DONE** (shipped 2026-03-17, polished 2026-03-18 with password confirm, strength bar, recovery chips, vault overlay, force-reset)
+- ~~Global hotkey to summon SnipSync~~ — **DONE** (configurable via ShortcutPicker in Settings, stored in userData/shortcut.txt, platform-aware display)
+- ~~End-to-end encryption~~ — **DONE** (shipped 2026-03-17, polished 2026-03-18, password change added 2026-03-24)
 - API access for Pro/Team (programmatic clip creation)
 - Webhooks for Pro/Team (trigger external actions on new clips)
 
@@ -414,10 +433,10 @@ Remaining:
 
 On the free plan, Supabase pauses the project after 1 week of no API calls. All users would see the app go dead. **Upgrade to Pro before any public launch.**
 
-## Current Status (as of 2026-03-23)
+## Current Status (as of 2026-03-24)
 
 ### What's live
-- Desktop app v0.3.1 (Mac + Windows) — GitHub Release published
+- Desktop app v0.3.1 (Mac + Windows) — GitHub Release published; rebuild in progress with 2026-03-24 fixes
 - Full security hardening: JWT on all edge functions, Electron sandbox, PBKDF2 600K, master key auto-clear, rate limiting, HMAC, hardened CSP, Vercel security headers
 - Logo rebranded: S-arrow hexagon design across app, tray, website, emails
 - All major dependencies upgraded (Electron 35, Vite 6, Sentry 5)
@@ -425,11 +444,16 @@ On the free plan, Supabase pauses the project after 1 week of no API calls. All 
 - Free tier: unlimited clips with 7-day history (no longer 30 clips/month)
 - Tray icon states: green (syncing), gray (offline), red (error)
 - First-time user onboarding flow
-- In-app feedback button in Settings
+- In-app feedback button in Settings (mailto: now allowed in URL handler)
+- Configurable global shortcut: stored in userData/shortcut.txt, ShortcutPicker in Settings, platform-aware display
 - 14 database indexes for query performance
 - Input sanitization, React error boundaries, rate limiting on all edge functions
 - Health check endpoint; env var validation skips in CI
-- E2E encryption with full UX (confirm, strength bar, recovery chips, vault overlay, force-reset)
+- E2E encryption: full UX (confirm, strength bar, recovery chips, vault overlay, force-reset) + password change flow
+- Encryption data-loss bugs fixed: auto-capture + mobile compose now correctly save encrypted flag + nonce
+- Batch decrypt throws on failure (no longer silently corrupts clips)
+- Encryption state sync across devices: 30s poll, auto-lock/unlock on remote state change
+- Team channel posts explicitly plaintext; tryDecryptClip() helper on all team render paths
 - File clips (drag-and-drop, up to 25MB on Pro) + image clips (up to 10MB on Pro)
 - Transactional emails via Resend (welcome, deletion, welcome-back)
 - Account deletion with full cleanup (profile + auth user + abuse prevention record)
@@ -439,7 +463,7 @@ On the free plan, Supabase pauses the project after 1 week of no API calls. All 
 - Teams feature merged to main: 12 tables, portal scaffolded, channels + @mentions + direct send + collections + billing implemented
 - Portal RLS: security definer functions
 - Sentry, Vercel Analytics, GitHub Actions all active
-- 27 tests passing
+- 38 tests passing (11 encryption + 12 utility + 8 supabase mock + 7 toast)
 
 ### In progress
 - Mobile app Phase 1 (React Native): scaffolded, sign-in working, vault unlock being tested on physical iPhone
@@ -452,7 +476,8 @@ On the free plan, Supabase pauses the project after 1 week of no API calls. All 
 - Supabase upgrade (must upgrade before 50 users — auto-pause risk on free plan)
 
 ### Next up
-- Complete mobile Phase 1: confirm vault unlock, build SettingsScreen, test full clip sync on device
+- Verify vault unlock works on physical iPhone against live encrypted clips (particularly with newly fixed nonce handling)
+- Complete mobile Phase 1: build SettingsScreen, test full end-to-end clip sync on device
 - Record demo video for Lemon Squeezy
 - Submit Google OAuth for verification with privacy policy URL
 - Connect Lemon Squeezy once approved (plug in checkout URL)

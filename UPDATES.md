@@ -1,5 +1,57 @@
 # Cross-Snip Updates
 
+## v0.3.1 Post-Release — Encryption Fixes, Password Change, Shortcut Picker (2026-03-24)
+
+### Encryption — Critical Bug Fixes
+
+- **Auto-capture data-loss fix** — When the vault was unlocked and auto-capture created a new clip, the `encrypted` flag and `nonce` were not being saved to the database. The clip content was encrypted in memory but stored as an unencrypted row. Fixed: both fields now correctly persist on every auto-captured clip.
+- **Mobile compose data-loss fix** — Same class of bug in the mobile compose path: nonce was not written to the DB. Fixed.
+- **Batch decrypt hardened** — `decryptAllClips()` previously caught decryption exceptions and replaced the clip content with the literal string `'[decryption failed]'`, then wrote that corrupted value back to the database. It now throws on failure so the caller can surface the error without touching clip data.
+- **Image clip nonce consistency** — Image clip nonce was stored as an empty string `''` rather than `null` when unencrypted. Changed to `null` to match all other clip types.
+
+### Password Change Flow
+
+- **`changeVaultPassword()` in `src/lib/crypto.js`** — New function: takes old and new password, derives the old wrapping key, decrypts the master key to verify the old password is correct, derives a new wrapping key from the new password, re-encrypts the master key, and saves to the profiles table.
+- **"Change password" in Settings** — When encryption is enabled, Settings now shows a "Change password" button. Opens an inline form: old password field, new password field with strength indicator, confirm field. On submit calls `changeVaultPassword()`.
+- **`saveEncryptionKeys()` recovery key preservation** — Previously, calling `saveEncryptionKeys()` without passing a recovery key would write `null` over the existing `encrypted_recovery_key` column, destroying it. Now only updates the recovery key column if a new value is explicitly provided.
+
+### Bug Fixes (from user testing)
+
+- **Feedback button `mailto:` blocked** — The Electron `shell.openExternal()` wrapper previously only allowed `http:` and `https:` protocols, silently dropping `mailto:` links. The feedback button was broken for all users. Fixed: `mailto:` is now explicitly allowed.
+- **Configurable global shortcut** — The global shortcut (previously hardcoded to `Cmd+Shift+V` / `Ctrl+Shift+V`) is now user-configurable. The chosen shortcut is stored in `userData/shortcut.txt` and loaded at startup. A `ShortcutPicker` component in Settings lets users record a new shortcut by pressing the desired key combination. Display is platform-aware (`⌘ ⇧` symbols on Mac, `Ctrl+Shift` text on Windows).
+- **Team messages delayed** — Channel clips posted by the current user were not appearing until a Realtime event arrived. Fixed with optimistic insert into local state, deduplicated when the Realtime event fires.
+- **Encryption state out of sync across devices** — If Device A enabled or disabled encryption, Device B had no mechanism to detect the change and would remain in the wrong state (e.g., trying to decrypt when encryption was disabled, or showing unencrypted clips without a vault prompt). Fixed: the app now polls the `profiles` table every 30 seconds for `encryption_enabled` state. If the state has changed, the app auto-locks or unlocks accordingly and notifies the user.
+
+### Team Encryption Clarification
+
+- **Channel posts are plaintext** — Team channel clips are explicitly never encrypted, even when the user's vault is unlocked. This is intentional: other team members must be able to read clips without knowing your vault password.
+- **`tryDecryptClip()` helper** — New helper function that wraps clip display decryption. If the clip is marked `encrypted` and the vault key is available, it decrypts transparently. If the vault is locked, it returns `[encrypted — unlock vault to view]`. Applied to all team render paths: channels, collections, mentions, and direct messages views.
+
+### Test Suite
+
+- **11 new encryption tests** (`src/lib/__tests__/encryption.test.js`):
+  - Round-trip: encrypt then decrypt returns original plaintext
+  - Wrong key rejection: decryption with wrong key throws
+  - Wrong nonce rejection: decryption with wrong nonce throws
+  - Nonce randomness: two encryptions of same content produce different nonces
+  - Password change: `changeVaultPassword()` round-trip — new password unlocks, old password fails
+  - Batch decrypt error propagation: confirms failure throws instead of corrupting
+
+- **Total: 38 tests** (was 27)
+
+### Files Changed
+
+| File | What changed |
+|------|-------------|
+| `src/lib/crypto.js` | `changeVaultPassword()` added; `saveEncryptionKeys()` recovery key preservation fix; batch decrypt throw on failure |
+| `src/lib/supabase.js` | Auto-capture and mobile compose paths: `encrypted` + `nonce` now correctly saved |
+| `src/components/SettingsView.jsx` | "Change password" button + ShortcutPicker component |
+| `electron/main.js` | `mailto:` allowed in URL handler; configurable shortcut loaded from userData/shortcut.txt |
+| `src/App.jsx` | Encryption state polling (30s); tryDecryptClip() integrated on team render paths |
+| `src/lib/__tests__/encryption.test.js` | **New** — 11 encryption tests |
+
+---
+
 ## v0.3.1 Post-Release — Teams, Production Hardening, Website Overhaul (2026-03-23)
 
 ### Free Tier Change

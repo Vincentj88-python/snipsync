@@ -1,13 +1,46 @@
 # SnipSync (snipsync.xyz) — Project Status
 
-**Last Updated**: 2026-03-23
-**Current Version**: v0.3.1
-**Status**: Active Development — Teams feature merged, production hardened, mobile Phase 1 in progress
+**Last Updated**: 2026-03-24
+**Current Version**: v0.3.1 (rebuild triggered)
+**Status**: Active Development — Encryption bugs fixed, password change flow added, configurable shortcut, 38 tests passing
 **Repo**: github.com/Vincentj88-python/snipsync (public)
 **Website**: snipsync.xyz (live on Vercel, waitlist active)
 **Supabase**: kohwpkwcopkslbtkczag (EU region, free plan)
 **Sentry**: Active (main + renderer, confirmed working)
 **CI/CD**: GitHub Actions (tests on push, Mac+Win builds on tag)
+
+---
+
+## What's Shipped (v0.3.1 — 2026-03-24 build)
+
+### Encryption Bug Fixes (critical)
+- Auto-capture clips now correctly save `encrypted` flag and `nonce` to DB — was silently saving unencrypted data when vault was unlocked
+- Mobile compose clips now correctly save `nonce` — same data-loss class of bug
+- Batch decrypt now throws on failure instead of corrupting the clip with the literal string `'[decryption failed]'`
+- Image clip nonce changed from empty string `''` to `null` for consistency across all clip types
+
+### Password Change Flow
+- New `changeVaultPassword()` function in `src/lib/crypto.js`
+- "Change password" button in Settings when encryption is active
+- Flow: enter old password → verify → re-wrap master key with new password → save to DB
+- `saveEncryptionKeys()` no longer wipes the recovery key when a new recovery key is not explicitly passed (was a destructive bug)
+
+### Bug Fixes (from user testing)
+- **Feedback button**: `mailto:` protocol now allowed in the Electron URL handler (was silently blocked)
+- **Configurable global shortcut**: Stored in `userData/shortcut.txt`, ShortcutPicker UI in Settings, platform-aware display (`Cmd+Shift+V` shown on Mac, `Ctrl+Shift+V` on Windows)
+- **Team messages appear immediately**: Optimistic insert in channel views + Realtime dedup (was showing a delay)
+- **Encryption state sync across devices**: App polls every 30 seconds for encryption state changes; auto-locks or unlocks when another device changes encryption state
+
+### Team Encryption Clarification
+- Team channel posts are explicitly plaintext — never encrypted, regardless of vault state
+- New `tryDecryptClip()` helper for display: if clip is encrypted and user has key, decrypt for viewing; if vault is locked, shows `[encrypted — unlock vault to view]`
+- Applied to all team render paths: channels, collections, mentions, direct messages
+
+### Test Suite Expanded (38 tests, was 27)
+- 11 encryption tests: round-trip correctness, wrong key rejection, wrong nonce rejection, nonce randomness, password change, batch decrypt error handling
+- 12 utility tests (unchanged)
+- 8 Supabase mock tests (unchanged)
+- 7 toast tests (unchanged)
 
 ---
 
@@ -115,6 +148,10 @@
 - Vault overlay: when locked, password input appears directly over clip list
 - Batch migration: existing clips encrypted/decrypted in place
 - Zero-knowledge: server stores only encrypted blobs
+- Password change flow: verify old password, re-wrap master key, save — recovery key preserved
+- Encryption state sync across devices: 30s poll, auto-lock/unlock on remote state change
+- Auto-capture and mobile compose correctly save encrypted flag + nonce (data-loss bug fixed)
+- Team clips always plaintext; `tryDecryptClip()` helper for safe display on all team views
 
 ### File and Image Clips (Pro-only)
 - Image clips: paste screenshots or drag images (up to 10MB on Pro)
@@ -153,6 +190,8 @@
 | 3 | Windows installer retry + multi-instance | Low | User reported needing to click "retry" during install. Single instance lock added but NSIS config may need tweaks. |
 | 4 | Extension popup CSS | Cosmetic | Chrome popup has hard square corners (browser limitation). |
 | 5 | Mobile vault unlock | In Testing | Vault unlock on physical iPhone being tested — PBKDF2 backward compat (600K/100K) may need verification against live encrypted clips. |
+| 6 | Auto-capture encryption data loss | Fixed (2026-03-24) | Auto-capture and mobile compose clips were not saving encrypted flag + nonce to DB. Fixed. |
+| 7 | Feedback button mailto blocked | Fixed (2026-03-24) | mailto: protocol was silently blocked by URL handler. Now allowed. |
 
 ---
 
@@ -202,10 +241,11 @@
 
 ## Tests
 
-27 tests passing (Vitest):
-- `src/lib/__tests__/utils.test.js` — detectType, mapPlatform
-- `src/lib/__tests__/supabase.test.js` — CRUD helpers (mocked)
-- `src/components/__tests__/Toast.test.jsx` — render, undo, dismiss
+38 tests passing (Vitest):
+- `src/lib/__tests__/encryption.test.js` — 11 tests: round-trip, wrong key, wrong nonce, nonce randomness, password change, batch decrypt error handling
+- `src/lib/__tests__/utils.test.js` — 12 tests: detectType, mapPlatform
+- `src/lib/__tests__/supabase.test.js` — 8 tests: CRUD helpers (mocked)
+- `src/components/__tests__/Toast.test.jsx` — 7 tests: render, undo, dismiss
 
 CI fix: env var validation now skips during test runs to prevent false failures.
 
@@ -220,7 +260,7 @@ CI fix: env var validation now skips during test runs to prevent false failures.
 /src/lib/supabase.js                     — Supabase client + all DB helpers + file/image upload + email
 /src/lib/crypto.js                       — E2E encryption (key gen, vault password, encrypt/decrypt, recovery)
 /src/lib/utils.js                        — detectType(), mapPlatform()
-/src/components/                         — ClipCard, InputArea, FilterBar, SearchBar, Toast, SettingsView (feedback button), onboarding components
+/src/components/                         — ClipCard, InputArea, FilterBar, SearchBar, Toast, SettingsView (feedback button, change password, shortcut picker), onboarding components
 /src/styles.css                          — All styles + animations + context menu + vault overlay + lightbox
 /website/                                — Landing page (index, privacy, terms, security page, styles, script)
 /supabase/functions/                     — ls-webhook, record-deletion, check-deleted, send-email (all JWT-protected, rate-limited)
@@ -244,6 +284,33 @@ CI fix: env var validation now skips during test runs to prevent false failures.
 ---
 
 ## Session Log
+
+### 2026-03-24 (v0.3.1 rebuild — Encryption Fixes, Password Change, Shortcut Picker, 38 Tests)
+
+**Encryption — Critical Bug Fixes**
+- Auto-capture clips were not saving `encrypted` flag or `nonce` to DB when vault was unlocked — data was stored in plaintext silently. Fixed.
+- Mobile compose clips had the same missing-nonce bug. Fixed.
+- Batch decrypt now throws on failure (was corrupting clips with the literal string `'[decryption failed]'`)
+- Image clip nonce changed from `''` to `null` for DB consistency
+
+**Password Change Flow**
+- `changeVaultPassword()` added to `src/lib/crypto.js`
+- "Change password" button in Settings when encryption is active
+- `saveEncryptionKeys()` no longer wipes recovery key when not explicitly passed (was destructive)
+
+**Bug Fixes (from user testing)**
+- Feedback button: `mailto:` protocol now allowed in Electron URL handler
+- Global shortcut: configurable — stored in `userData/shortcut.txt`, ShortcutPicker in Settings, platform-aware display
+- Team messages: optimistic insert + Realtime dedup — appear immediately now
+- Encryption sync: polls every 30s, auto-locks/unlocks on remote state change
+
+**Team Encryption Clarification**
+- Team channel posts are plaintext; `tryDecryptClip()` helper added for display
+- Applied to channels, collections, mentions, and direct messages views
+
+**Test Suite**
+- 11 encryption tests added (round-trip, wrong key, wrong nonce, randomness, password change, batch failure)
+- Total: 38 tests (was 27)
 
 ### 2026-03-23 (post-v0.3.1 — Teams, Production Hardening, Website Overhaul)
 

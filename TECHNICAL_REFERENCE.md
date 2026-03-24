@@ -1,7 +1,7 @@
 # SnipSync — Technical Reference
 
 > Comprehensive technical document for developers and AI analysis.
-> Last updated: 2026-03-23 | Version: v0.3.1
+> Last updated: 2026-03-24 | Version: v0.3.1 (rebuild)
 
 ## What It Is
 
@@ -47,7 +47,7 @@ Cross-device clipboard sync desktop app. Copy on Mac, paste on Windows (or vice 
 │   ├── styles.css                 # All styles + animations
 │   ├── components/
 │   │   ├── ClipCard.jsx           # Clip display: type badge, copy, pin, delete, expand, context menu
-│   │   ├── SettingsView.jsx       # Plan info, encryption UI, export, account deletion
+│   │   ├── SettingsView.jsx       # Plan info, encryption UI (incl. change password), ShortcutPicker, export, account deletion
 │   │   ├── TeamView.jsx           # Channels, mentions, direct send, collections
 │   │   ├── InputArea.jsx          # Text input + drag-drop files
 │   │   ├── SearchBar.jsx          # Persistent search, / shortcut
@@ -56,7 +56,7 @@ Cross-device clipboard sync desktop app. Copy on Mac, paste on Windows (or vice 
 │   │   └── ErrorBoundary.jsx      # Crash recovery UI
 │   └── lib/
 │       ├── supabase.js            # Supabase client, all CRUD, team queries, mentions
-│       ├── crypto.js              # E2E encryption: PBKDF2, tweetnacl, recovery phrases
+│       ├── crypto.js              # E2E encryption: PBKDF2, tweetnacl, recovery phrases, changeVaultPassword, tryDecryptClip
 │       ├── utils.js               # detectType(), mapPlatform()
 │       └── sanitize.js            # HTML/injection sanitization
 │
@@ -290,6 +290,34 @@ Other device: vault password → PBKDF2 → wrapping key → decrypt master key
 | Timestamps | Yes — needed for sorting |
 | Device name | Yes — needed for badges |
 
+### Key Functions in `src/lib/crypto.js`
+
+| Function | Purpose |
+|---|---|
+| `generateMasterKey()` | Generates a 256-bit random master key |
+| `deriveWrappingKey(password, salt)` | PBKDF2 (600K or 100K iterations) → AES-GCM wrapping key |
+| `encryptMasterKey(masterKey, password)` | Wraps master key with vault password |
+| `decryptMasterKey(encryptedMasterKey, password, salt, nonce)` | Unwraps master key — tries 600K then 100K PBKDF2 iterations |
+| `encryptClip(content, masterKey)` | XSalsa20-Poly1305 encrypt; returns `{ encrypted, nonce }` |
+| `decryptClip(encryptedContent, nonce, masterKey)` | Decrypts a clip; throws on failure (never silently corrupts) |
+| `tryDecryptClip(clip, masterKey)` | Safe display helper: returns plaintext, or fallback string if vault locked |
+| `changeVaultPassword(oldPassword, newPassword, profile)` | Verifies old password, re-wraps master key with new password, saves |
+| `encryptExistingClips(clips, masterKey)` | Batch encrypt all plaintext clips in place |
+| `decryptAllClips(clips, masterKey)` | Batch decrypt; throws on any failure to prevent data corruption |
+| `generateRecoveryPhrase()` | 12 words from 256-word list, used to encrypt master key separately |
+
+### Encryption State Sync Across Devices
+
+- App polls `profiles` table every 30 seconds for `encryption_enabled` state
+- If state changed since last poll: auto-lock (encryption enabled remotely) or auto-unlock prompt (disabled remotely)
+- Prevents Device B from operating in wrong mode after Device A changes encryption settings
+
+### Team Clip Encryption Policy
+
+- Team channel clips, collection clips, direct clips, and mentions are **always plaintext**
+- Even if the sender's vault is unlocked, team clips are never encrypted before storage
+- `tryDecryptClip()` is applied on all team render paths for clips that may have been marked encrypted from personal clip history
+
 ### Memory Safety
 
 - Master key stored as `Uint8Array` in React ref
@@ -335,7 +363,11 @@ supabase.channel(`clips:${userId}`)
 
 ## Global Keyboard Shortcut
 
-`Cmd+Shift+V` (Mac) / `Ctrl+Shift+V` (Windows) — snips clipboard from anywhere:
+Default: `Cmd+Shift+V` (Mac) / `Ctrl+Shift+V` (Windows). **Configurable** by the user via ShortcutPicker in Settings.
+
+- Stored in `userData/shortcut.txt` (survives reinstalls)
+- Loaded at startup by Electron main process; re-registered when changed
+- Display is platform-aware: `⌘ ⇧ V` on Mac, `Ctrl+Shift+V` on Windows
 
 | Clipboard content | Action |
 |---|---|
@@ -399,7 +431,7 @@ Respects encryption (encrypts if vault unlocked) and plan limits.
 ### ci.yml (push to main, PRs)
 
 ```
-Checkout → Node 20 → npm ci → npm test (27 tests) → npx vite build
+Checkout → Node 20 → npm ci → npm test (38 tests) → npx vite build
 ```
 
 ### release.yml (version tags)
@@ -444,7 +476,7 @@ LS_TEAM_WEBHOOK_SECRET=<team-webhook-secret>
 ```bash
 npm install           # Install dependencies
 npm run dev           # Vite + Electron concurrently
-npm test              # Vitest (27 tests)
+npm test              # Vitest (38 tests)
 npm run build         # Vite build + electron-builder
 
 # Portal
@@ -480,3 +512,4 @@ npx react-native run-ios --udid=<id>      # Physical device
 | v0.3.0 | 2026-03-18 | UI overhaul, encryption UX, file clips, account deletion, emails |
 | v0.3.1 | 2026-03-20 | Security hardening, dep upgrades, PBKDF2 600K, logo rebrand |
 | main | 2026-03-23 | Teams, portal, production hardening, free tier change, website overhaul |
+| main | 2026-03-24 | Encryption data-loss fixes, password change, configurable shortcut, tryDecryptClip, 38 tests |
