@@ -241,3 +241,45 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     btn.disabled = false;
   });
 })();
+
+// ============================================
+// COUNTDOWN TIMER
+// ============================================
+
+(function () {
+  // Set launch date to 14 days from 2026-03-24
+  const launchDate = new Date('2026-04-07T09:00:00Z');
+
+  function update() {
+    const now = Date.now();
+    const diff = launchDate - now;
+
+    if (diff <= 0) {
+      const banner = document.getElementById('countdown-banner');
+      if (banner) {
+        banner.querySelector('.countdown-label').textContent = 'Beta is live!';
+        banner.querySelector('.countdown-timer').style.display = 'none';
+        banner.querySelector('.countdown-cta').textContent = 'Download now';
+      }
+      return;
+    }
+
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    const d = document.getElementById('cd-days');
+    const h = document.getElementById('cd-hours');
+    const m = document.getElementById('cd-mins');
+    const s = document.getElementById('cd-secs');
+
+    if (d) d.textContent = String(days).padStart(2, '0');
+    if (h) h.textContent = String(hours).padStart(2, '0');
+    if (m) m.textContent = String(mins).padStart(2, '0');
+    if (s) s.textContent = String(secs).padStart(2, '0');
+  }
+
+  update();
+  setInterval(update, 1000);
+})();
