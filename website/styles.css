@@ -53,45 +53,30 @@ a { color: inherit; text-decoration: none; }
    COUNTDOWN BANNER
    ======================================== */
 
-.countdown-banner {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  background: rgba(5,5,5,0.95);
-  border-bottom: 1px solid rgba(34,197,94,0.15);
-  padding: 12px 24px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
+/* Countdown sits inside the nav — no separate banner */
+.countdown-banner { display: none; }
 
-/* Push nav below the banner */
-body:has(.countdown-banner) .nav { top: 48px; }
-body:has(.countdown-banner) .hero { padding-top: 48px; }
-.countdown-inner {
-  max-width: 900px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;
+.nav-countdown {
+  display: flex; align-items: center; gap: 12px;
+  margin-left: auto; margin-right: 16px;
 }
 .countdown-label {
-  font-size: 13px; font-weight: 600; color: #22c55e;
-  text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 9px; font-weight: 700; color: #22c55e;
+  text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;
 }
-.countdown-timer { display: flex; align-items: center; gap: 4px; }
-.countdown-unit { text-align: center; min-width: 40px; }
+.countdown-timer { display: flex; align-items: center; gap: 2px; }
+.countdown-unit { text-align: center; }
 .countdown-num {
-  display: block; font-size: 22px; font-weight: 800; color: #fff;
+  display: block; font-size: 14px; font-weight: 800; color: #e5e5e5;
   font-family: 'DM Mono', monospace; letter-spacing: -0.5px; line-height: 1;
+  background: rgba(255,255,255,0.04); border-radius: 4px; padding: 3px 5px; min-width: 26px;
 }
-.countdown-sub { display: block; font-size: 8px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
-.countdown-sep { font-size: 18px; color: #333; font-weight: 300; margin: 0 2px; padding-bottom: 10px; }
-.countdown-cta {
-  font-size: 11px; font-weight: 600; color: #000; background: #22c55e;
-  padding: 6px 16px; border-radius: 6px; text-decoration: none;
-  transition: background 200ms;
-}
-.countdown-cta:hover { background: #16a34a; }
+.countdown-sub { display: none; }
+.countdown-sep { font-size: 11px; color: #333; margin: 0 1px; }
+.countdown-cta { display: none; }
 
-@media (max-width: 600px) {
-  .countdown-inner { gap: 12px; }
-  .countdown-label { font-size: 11px; }
-  .countdown-num { font-size: 18px; }
+@media (max-width: 700px) {
+  .nav-countdown { display: none; }
 }
 
 /* ========================================
