@@ -5,6 +5,7 @@ import {
   getDirectClips, sendDirectClip, getUnreadMentionCount, getMyMentions,
   markMentionRead, getCollections, getCollectionClips, removeFromCollection,
 } from '../lib/supabase'
+import { decryptClip } from '../lib/crypto'
 import { detectType } from '../lib/utils'
 import ClipCard from './ClipCard'
 
@@ -142,12 +143,29 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
     setShowMentions(false)
   }
 
-  // Send clip to channel
+  // Decrypt a clip if encrypted and we have the key (for display only)
+  const tryDecryptClip = (clip) => {
+    if (!clip) return clip
+    if (clip.encrypted && clip.nonce && clip.content !== '[image]' && masterKeyRef?.current) {
+      try {
+        return { ...clip, content: decryptClip(clip.content, clip.nonce, masterKeyRef.current) }
+      } catch {
+        return { ...clip, content: '[encrypted]' }
+      }
+    }
+    if (clip.encrypted && !masterKeyRef?.current) {
+      return { ...clip, content: '[encrypted — unlock vault to view]' }
+    }
+    return clip
+  }
+
+  // Send clip to channel — NEVER encrypted (team clips are plaintext)
   const handleSend = async () => {
     if (!input.trim() || !activeChannelId || !deviceId || sending) return
     setSending(true)
 
     const type = detectType(input.trim())
+    // Force plaintext — team clips are not encrypted
     const { data: clipData } = await addClip(user.id, deviceId, input.trim(), type)
 
     if (clipData) {
@@ -285,8 +303,8 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
                   <span className="team-clip-sender">{cc.profiles?.display_name || cc.profiles?.email || 'Unknown'}</span>
                   {cc.clips && (
                     <ClipCard
-                      clip={cc.clips}
-                      onCopy={() => navigator.clipboard.writeText(cc.clips.content)}
+                      clip={tryDecryptClip(cc.clips)}
+                      onCopy={() => navigator.clipboard.writeText(tryDecryptClip(cc.clips).content)}
                       onOpenUrl={onOpenUrl}
                       onDownloadFile={onDownloadFile}
                       onLightbox={onLightbox}
@@ -344,8 +362,8 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
                 {!m.read_at && <span className="mention-unread-dot" />}
                 {m.clips && (
                   <ClipCard
-                    clip={m.clips}
-                    onCopy={() => navigator.clipboard.writeText(m.clips.content)}
+                    clip={tryDecryptClip(m.clips)}
+                    onCopy={() => navigator.clipboard.writeText(tryDecryptClip(m.clips).content)}
                     onOpenUrl={onOpenUrl}
                   />
                 )}
@@ -367,8 +385,8 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
                 </span>
                 {dc.clips && (
                   <ClipCard
-                    clip={dc.clips}
-                    onCopy={() => navigator.clipboard.writeText(dc.clips.content)}
+                    clip={tryDecryptClip(dc.clips)}
+                    onCopy={() => navigator.clipboard.writeText(tryDecryptClip(dc.clips).content)}
                     onOpenUrl={onOpenUrl}
                   />
                 )}
