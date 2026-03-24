@@ -62,4 +62,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeListener('snip-file', handler)
   },
   setTrayState: (state) => ipcRenderer.invoke('set-tray-state', state),
+  getShortcut: () => ipcRenderer.invoke('get-shortcut'),
+  setShortcut: (accelerator) => ipcRenderer.invoke('set-shortcut', accelerator),
 })

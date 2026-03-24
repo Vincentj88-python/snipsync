@@ -81,9 +81,13 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
     unsubChannelRef.current = subscribeToChannel(
       activeChannelId,
       async (newChannelClip) => {
-        // Reload to get full joined data
-        const data = await getChannelClips(activeChannelId)
-        setChannelClips(data)
+        // Check if already in local state (optimistic insert)
+        setChannelClips((prev) => {
+          if (prev.some((cc) => cc.id === newChannelClip.id)) return prev
+          // Reload to get full joined data
+          getChannelClips(activeChannelId).then(setChannelClips)
+          return prev
+        })
       },
       (deletedId) => {
         setChannelClips((prev) => prev.filter((cc) => cc.id !== deletedId))
@@ -149,6 +153,16 @@ export default function TeamView({ user, deviceId, subscription, onOpenUrl, onDo
     if (clipData) {
       // Post to channel
       const { data: channelClipData } = await postToChannel(activeChannelId, clipData.id, user.id)
+
+      // Optimistically add to local state immediately
+      if (channelClipData) {
+        const optimisticEntry = {
+          ...channelClipData,
+          clips: clipData,
+          profiles: { display_name: user.user_metadata?.full_name || user.email, email: user.email },
+        }
+        setChannelClips((prev) => [optimisticEntry, ...prev])
+      }
 
       // Parse and create mentions
       const foundMentions = parseMentions(input.trim(), teamMembers, teamGroups)

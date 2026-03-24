@@ -359,6 +359,29 @@ export default function App() {
     }
   }, [user, platformReady])
 
+  // Poll encryption status from other devices (every 30s)
+  useEffect(() => {
+    if (!user) return
+    const interval = setInterval(async () => {
+      try {
+        const settings = await getEncryptionSettings(user.id)
+        const serverEnabled = !!settings?.encryption_enabled
+        if (serverEnabled && !encryptionEnabled) {
+          // Another device enabled encryption
+          setEncryptionEnabled(true)
+          if (!masterKeyRef.current) setVaultLocked(true)
+        } else if (!serverEnabled && encryptionEnabled) {
+          // Another device disabled encryption
+          setEncryptionEnabled(false)
+          setVaultLocked(false)
+          if (masterKeyRef.current instanceof Uint8Array) masterKeyRef.current.fill(0)
+          masterKeyRef.current = null
+        }
+      } catch {}
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [user, encryptionEnabled])
+
   // Global keyboard shortcut — register once with ref
   const handleSend = useCallback(async () => {
     const text = input.trim()

@@ -125,6 +125,57 @@ function RecoveryPhraseDisplay({ phrase, onDone }) {
   )
 }
 
+function ShortcutPicker() {
+  const [shortcut, setShortcut] = React.useState('')
+  const [recording, setRecording] = React.useState(false)
+  const [saved, setSaved] = React.useState(false)
+
+  React.useEffect(() => {
+    if (window.electronAPI?.getShortcut) {
+      window.electronAPI.getShortcut().then((s) => setShortcut(s || 'CommandOrControl+Shift+V'))
+    }
+  }, [])
+
+  const handleRecord = () => {
+    setRecording(true)
+    setSaved(false)
+    const handler = (e) => {
+      e.preventDefault()
+      if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) return
+
+      const parts = []
+      if (e.metaKey || e.ctrlKey) parts.push('CommandOrControl')
+      if (e.shiftKey) parts.push('Shift')
+      if (e.altKey) parts.push('Alt')
+      parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key)
+
+      const accelerator = parts.join('+')
+      if (window.electronAPI?.setShortcut) {
+        window.electronAPI.setShortcut(accelerator).then((result) => {
+          setShortcut(result.shortcut)
+          setSaved(true)
+          setTimeout(() => setSaved(false), 2000)
+        })
+      }
+      setRecording(false)
+      window.removeEventListener('keydown', handler)
+    }
+    window.addEventListener('keydown', handler, { once: true })
+  }
+
+  const displayShortcut = shortcut
+    .replace('CommandOrControl', navigator.platform.includes('Mac') ? '⌘' : 'Ctrl')
+    .replace('Shift', '⇧')
+    .replace('Alt', '⌥')
+    .replace(/\+/g, ' ')
+
+  return (
+    <button className="settings-shortcut-btn" onClick={handleRecord}>
+      {recording ? 'Press keys...' : saved ? '✓ Saved' : displayShortcut}
+    </button>
+  )
+}
+
 export default function SettingsView({ subscription, usage, user, devices, clips, autoCapture, onToggleAutoCapture, openAtLogin, onToggleOpenAtLogin, encryptionEnabled, vaultLocked, onVaultUnlock, onEncryptionChange, onSignOut, onUpgrade }) {
   const plan = subscription?.plan || 'free'
   const limits = PLAN_LIMITS[plan]
@@ -257,6 +308,20 @@ export default function SettingsView({ subscription, usage, user, devices, clips
           >
             <span className="settings-toggle-knob" />
           </button>
+        </div>
+      </div>
+
+      {/* Global shortcut */}
+      <div className="settings-section">
+        <h3 className="settings-section-title">Global shortcut</h3>
+        <div className="settings-toggle-row">
+          <div className="settings-toggle-info">
+            <span className="settings-toggle-label">Snip clipboard shortcut</span>
+            <span className="settings-toggle-desc">
+              Press from anywhere to instantly save your clipboard as a clip.
+            </span>
+          </div>
+          <ShortcutPicker />
         </div>
       </div>
 

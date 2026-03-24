@@ -284,10 +284,10 @@ function registerIpcHandlers() {
   })
 
   ipcMain.handle('open-url', (_event, url) => {
-    // Validate URL — only allow http: and https: protocols
+    // Validate URL — allow http, https, and mailto protocols
     try {
       const parsed = new URL(url)
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'mailto:') {
         shell.openExternal(url)
       }
     } catch {
@@ -371,9 +371,28 @@ app.whenReady().then(() => {
   createTray()
   createWindow()
 
-  // Global shortcut: Cmd+Shift+V (Mac) / Ctrl+Shift+V (Win) to snip clipboard
-  const shortcut = process.platform === 'darwin' ? 'CommandOrControl+Shift+V' : 'Ctrl+Shift+V'
-  globalShortcut.register(shortcut, () => {
+  // Global shortcut — configurable, stored in userData/shortcut.txt
+  const shortcutPath = path.join(app.getPath('userData'), 'shortcut.txt')
+  const defaultShortcut = 'CommandOrControl+Shift+V'
+  let currentShortcut = defaultShortcut
+  try {
+    const saved = fs.readFileSync(shortcutPath, 'utf8').trim()
+    if (saved) currentShortcut = saved
+  } catch {}
+
+  function registerSnipShortcut(accelerator) {
+    globalShortcut.unregisterAll()
+    const success = globalShortcut.register(accelerator, snipClipboard)
+    if (!success) {
+      // Fallback to default if custom shortcut fails
+      globalShortcut.register(defaultShortcut, snipClipboard)
+      currentShortcut = defaultShortcut
+    } else {
+      currentShortcut = accelerator
+    }
+  }
+
+  function snipClipboard() {
     if (!mainWindow) return
 
     // Check for files first (Finder copies file paths)
@@ -401,6 +420,20 @@ app.whenReady().then(() => {
       mainWindow.webContents.send('snip-text', text.trim())
       new Notification({ title: 'SnipSync', body: 'Clip snipped!' }).show()
       return
+    }
+  }
+
+  registerSnipShortcut(currentShortcut)
+
+  // IPC: get/set shortcut
+  ipcMain.handle('get-shortcut', () => currentShortcut)
+  ipcMain.handle('set-shortcut', (_event, accelerator) => {
+    try {
+      registerSnipShortcut(accelerator)
+      fs.writeFileSync(shortcutPath, accelerator, 'utf8')
+      return { success: true, shortcut: currentShortcut }
+    } catch {
+      return { success: false, shortcut: currentShortcut }
     }
   })
 
