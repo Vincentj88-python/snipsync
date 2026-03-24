@@ -54,11 +54,17 @@ a { color: inherit; text-decoration: none; }
    ======================================== */
 
 .countdown-banner {
-  position: relative; z-index: 10;
-  background: linear-gradient(90deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.03) 50%, rgba(34,197,94,0.08) 100%);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(5,5,5,0.95);
   border-bottom: 1px solid rgba(34,197,94,0.15);
-  padding: 14px 24px;
+  padding: 12px 24px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
+
+/* Push nav below the banner */
+body:has(.countdown-banner) .nav { top: 48px; }
+body:has(.countdown-banner) .hero { padding-top: 48px; }
 .countdown-inner {
   max-width: 900px; margin: 0 auto;
   display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;
