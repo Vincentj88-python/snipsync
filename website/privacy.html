@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — SnipSync</title>
+  <meta name="description" content="SnipSync privacy policy — learn how we handle your data, what we collect, and how end-to-end encryption protects your clips." />
+  <meta property="og:title" content="Privacy Policy — SnipSync" />
+  <meta property="og:description" content="SnipSync privacy policy — learn how we handle your data, what we collect, and how end-to-end encryption protects your clips." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://snipsync.xyz/privacy.html" />
+  <link rel="canonical" href="https://snipsync.xyz/privacy.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet" />
@@ -15,12 +21,13 @@
   <nav class="nav nav--solid">
     <div class="nav-inner">
       <a href="index.html" class="nav-logo">
-        <svg class="nav-logo-mark" width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M 15 55 C 35 55, 30 80, 50 80 C 70 80, 65 20, 85 20" stroke="url(#nav-g)" stroke-width="6" stroke-linecap="round"/><circle cx="15" cy="55" r="10" fill="#4ade80"/><circle cx="85" cy="20" r="10" fill="#22c55e"/><defs><linearGradient id="nav-g" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#22c55e"/></linearGradient></defs></svg>
+        <svg class="nav-logo-mark" width="28" height="28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M 30 10 L 90 10 L 120 40 L 100 60 L 120 80 L 90 110 L 30 110 L 0 80 L 20 60 L 0 40 Z" stroke="#22c55e" stroke-width="2" stroke-linejoin="miter" fill="none" opacity="0.3"/><path d="M 30 20 L 90 20 L 110 40 L 90 60 L 110 80 L 90 100 L 30 100 L 10 80 L 30 60 L 10 40 Z" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="miter" fill="none"/><g stroke-linecap="square"><path d="M 85 40 L 50 40 L 30 60 L 90 60 L 70 80 L 35 80" stroke="#22c55e" stroke-width="14" stroke-linejoin="miter" fill="none"/><polygon points="85,24 108,40 85,56" fill="#22c55e"/><polygon points="35,64 12,80 35,96" fill="#22c55e"/></g></svg>
         <span class="nav-logo-text">SnipSync</span>
       </a>
       <div class="nav-links">
         <a href="index.html">Home</a>
         <a href="terms.html">Terms</a>
+        <a href="security.html">Security</a>
       </div>
     </div>
   </nav>
@@ -29,7 +36,7 @@
     <div class="legal-inner">
       <p class="legal-label">Privacy Policy</p>
       <h1 class="legal-h1">How we handle your data</h1>
-      <p class="legal-updated">Last updated: March 15, 2026</p>
+      <p class="legal-updated">Last updated: March 24, 2026</p>
 
       <div class="legal-body">
         <section>
@@ -48,9 +55,11 @@
           <h3>Device information</h3>
           <p>We store a device name (your computer's hostname) and platform (macOS or Windows) for each device you use SnipSync on. This helps you identify which device a clip came from. We also store a "last seen" timestamp to show device online status.</p>
 
+          <h3>Clipboard auto-capture (optional)</h3>
+          <p>SnipSync Pro includes an optional clipboard auto-capture feature. When enabled, the app periodically reads your system clipboard to detect new content and create clips automatically. This happens entirely on your device — clipboard content is only transmitted to our servers when a new clip is created. Auto-capture is off by default and can be toggled at any time in Settings.</p>
+
           <h3>What we do NOT collect</h3>
           <ul>
-            <li>We do not read or monitor your system clipboard automatically. Clips are only created when you explicitly paste or type into the SnipSync app.</li>
             <li>We do not collect analytics, telemetry, or usage data.</li>
             <li>We do not use cookies or tracking pixels.</li>
             <li>We do not collect IP addresses for tracking purposes.</li>
@@ -101,14 +110,29 @@
                 <td>Database &amp; auth backend</td>
                 <td>All stored data</td>
               </tr>
+              <tr>
+                <td>Sentry</td>
+                <td>Error tracking</td>
+                <td>Error reports, device info (OS, app version)</td>
+              </tr>
+              <tr>
+                <td>Lemon Squeezy</td>
+                <td>Payments</td>
+                <td>Email, payment details (processed by Lemon Squeezy, not stored by us)</td>
+              </tr>
+              <tr>
+                <td>Resend</td>
+                <td>Transactional emails</td>
+                <td>Email address</td>
+              </tr>
             </tbody>
           </table>
-          <p>Both services have their own privacy policies. We encourage you to review them.</p>
+          <p>These services have their own privacy policies. We encourage you to review them.</p>
         </section>
 
         <section>
           <h2>Data retention</h2>
-          <p>Your clips and account data are stored indefinitely while your account is active. You can delete individual clips at any time through the app. To delete your entire account and all associated data, contact us at the email below.</p>
+          <p>Your clips and account data are stored indefinitely while your account is active. You can delete individual clips at any time through the app. To delete your entire account and all associated data, go to Settings &rarr; Danger Zone in the app. This permanently removes your profile, clips, devices, and authentication data.</p>
         </section>
 
         <section>
@@ -117,7 +141,7 @@
           <ul>
             <li><strong>Access</strong> your data — all your clips are visible in the app.</li>
             <li><strong>Delete</strong> your data — delete clips in-app, or request full account deletion.</li>
-            <li><strong>Export</strong> your data — contact us to request a data export.</li>
+            <li><strong>Export</strong> your data — export your clips as CSV or JSON from Settings in the app.</li>
             <li><strong>Withdraw consent</strong> — sign out and uninstall at any time.</li>
           </ul>
         </section>
@@ -145,7 +169,7 @@
     <div class="foot-inner">
       <div class="foot-left">
         <div class="foot-brand">
-          <svg class="nav-logo-mark" width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M 15 55 C 35 55, 30 80, 50 80 C 70 80, 65 20, 85 20" stroke="url(#nav-g)" stroke-width="6" stroke-linecap="round"/><circle cx="15" cy="55" r="10" fill="#4ade80"/><circle cx="85" cy="20" r="10" fill="#22c55e"/><defs><linearGradient id="nav-g" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#22c55e"/></linearGradient></defs></svg>
+          <svg class="nav-logo-mark" width="28" height="28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M 30 10 L 90 10 L 120 40 L 100 60 L 120 80 L 90 110 L 30 110 L 0 80 L 20 60 L 0 40 Z" stroke="#22c55e" stroke-width="2" stroke-linejoin="miter" fill="none" opacity="0.3"/><path d="M 30 20 L 90 20 L 110 40 L 90 60 L 110 80 L 90 100 L 30 100 L 10 80 L 30 60 L 10 40 Z" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="miter" fill="none"/><g stroke-linecap="square"><path d="M 85 40 L 50 40 L 30 60 L 90 60 L 70 80 L 35 80" stroke="#22c55e" stroke-width="14" stroke-linejoin="miter" fill="none"/><polygon points="85,24 108,40 85,56" fill="#22c55e"/><polygon points="35,64 12,80 35,96" fill="#22c55e"/></g></svg>
           <span class="nav-logo-text">SnipSync</span>
         </div>
         <p class="foot-copy">&copy; 2026 Vincent Jacobs. All rights reserved.</p>
@@ -153,6 +177,7 @@
       <div class="foot-right">
         <a href="privacy.html">Privacy</a>
         <a href="terms.html">Terms</a>
+        <a href="security.html">Security</a>
       </div>
     </div>
   </footer>

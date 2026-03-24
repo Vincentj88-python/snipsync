@@ -174,6 +174,32 @@
 
 
 // ============================================
+// MOBILE NAV TOGGLE
+// ============================================
+
+(function () {
+  const hamburger = document.getElementById('nav-hamburger');
+  const navLinks = document.getElementById('nav-links');
+  if (!hamburger || !navLinks) return;
+
+  hamburger.addEventListener('click', () => {
+    const isOpen = hamburger.classList.toggle('open');
+    navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', isOpen);
+  });
+
+  // Close menu when a link is clicked
+  navLinks.querySelectorAll('a').forEach((a) => {
+    a.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      navLinks.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+
+
+// ============================================
 // SMOOTH ANCHOR SCROLLING
 // ============================================
 
@@ -255,12 +281,23 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     const diff = launchDate - now;
 
     if (diff <= 0) {
-      const banner = document.getElementById('countdown-banner');
-      if (banner) {
-        banner.querySelector('.countdown-label').textContent = 'Beta is live!';
-        banner.querySelector('.countdown-timer').style.display = 'none';
-        banner.querySelector('.countdown-cta').textContent = 'Download now';
+      // Update nav countdown
+      const navCountdown = document.getElementById('nav-countdown');
+      if (navCountdown) {
+        const label = navCountdown.querySelector('.countdown-label');
+        const timer = navCountdown.querySelector('.countdown-timer');
+        if (label) label.textContent = 'Beta is live!';
+        if (timer) timer.style.display = 'none';
       }
+      // Update hero pill
+      const pill = document.querySelector('.hero-pill-text');
+      if (pill) pill.textContent = 'Beta is live — Mac & Windows';
+      // Update hero CTA
+      const ctaBtn = document.querySelector('.btn-main');
+      if (ctaBtn) ctaBtn.textContent = 'Download now';
+      // Update nav CTA
+      const navCta = document.querySelector('.nav-cta');
+      if (navCta) navCta.textContent = 'Download now';
       return;
     }
 

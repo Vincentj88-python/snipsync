@@ -44,7 +44,7 @@ Cross-device clipboard sync desktop app. Copy on Mac, paste on Windows (or vice 
 - Image clips stored in Supabase Storage `clip-images` bucket, lazy-loaded via IntersectionObserver
 - File clips stored in Supabase Storage `clip-files` bucket, drag-and-drop upload, download via signed URLs
 - Clipboard auto-capture runs in Electron main process (1.5s interval, MD5 hash dedup)
-- Free tier: 30 clips/month (resets 1st, deleting clips doesn't restore counter), 2 devices, 7-day history. No image/file clips.
+- Free tier: unlimited clips, 2 devices, 7-day history. No image/file clips.
 - Pro tier: unlimited clips/devices/history, images up to 10MB, files up to 25MB
 - Account deletion: Settings → Danger zone → edge function deletes profile (cascade), auth user, records in deleted_accounts table, sends confirmation email
 - Re-signup after deletion: allowed with warning toast + welcome-back email
@@ -55,7 +55,7 @@ Cross-device clipboard sync desktop app. Copy on Mac, paste on Windows (or vice 
 ## Encryption Architecture
 - **Module**: `src/lib/crypto.js` — all encryption logic lives here
 - **Algorithm**: tweetnacl XSalsa20-Poly1305 (`nacl.secretbox`)
-- **Key derivation**: PBKDF2 100,000 iterations via Web Crypto API (`crypto.subtle`)
+- **Key derivation**: PBKDF2 600,000 iterations via Web Crypto API (`crypto.subtle`)
 - **Flow**:
   1. User enables encryption in Settings, sets a vault password (with confirmation + strength indicator)
   2. Random 256-bit master key generated (`nacl.randomBytes(32)`)
