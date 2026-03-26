@@ -36,12 +36,12 @@
     <div class="legal-inner">
       <p class="legal-label">Privacy Policy</p>
       <h1 class="legal-h1">How we handle your data</h1>
-      <p class="legal-updated">Last updated: March 24, 2026</p>
+      <p class="legal-updated">Last updated: March 26, 2026</p>
 
       <div class="legal-body">
         <section>
           <h2>Who we are</h2>
-          <p>SnipSync is a desktop clipboard-syncing application built by Vincent Jacobs ("we", "us", "our"). This policy explains what data we collect, why, and how we protect it.</p>
+          <p>SnipSync is a cross-device clipboard-syncing service available as a Chrome browser extension and desktop application, built by Vincent Jacobs ("we", "us", "our"). This policy explains what data we collect, why, and how we protect it. It applies to all SnipSync products including the Chrome extension and desktop apps.</p>
         </section>
 
         <section>
@@ -53,7 +53,10 @@
           <p>When you create a clip (paste text, type a note, save a link), the content is stored in our database so it can be synced to your other devices. When end-to-end encryption is enabled, clip content is encrypted on your device before being transmitted — our servers only store encrypted data that we cannot read. When encryption is not enabled, clip content is stored as readable text.</p>
 
           <h3>Device information</h3>
-          <p>We store a device name (your computer's hostname) and platform (macOS or Windows) for each device you use SnipSync on. This helps you identify which device a clip came from. We also store a "last seen" timestamp to show device online status.</p>
+          <p>We store a device name (your computer's hostname, or "Chrome Extension" for browser users) and platform (macOS, Windows, or web) for each device you use SnipSync on. This helps you identify which device a clip came from. We also store a "last seen" timestamp to show device online status.</p>
+
+          <h3>Chrome extension</h3>
+          <p>The SnipSync Chrome extension uses the <code>chrome.identity</code> API to authenticate you via Google OAuth. It uses <code>chrome.storage.local</code> to store your authentication tokens locally on your device. It uses <code>chrome.contextMenus</code> and <code>chrome.scripting</code> to let you snip selected text from web pages. No browsing history, page content, or personal data is collected beyond what you explicitly choose to snip.</p>
 
           <h3>Clipboard auto-capture (optional)</h3>
           <p>SnipSync Pro includes an optional clipboard auto-capture feature. When enabled, the app periodically reads your system clipboard to detect new content and create clips automatically. This happens entirely on your device — clipboard content is only transmitted to our servers when a new clip is created. Auto-capture is off by default and can be toggled at any time in Settings.</p>
