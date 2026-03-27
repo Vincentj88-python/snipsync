@@ -280,7 +280,7 @@ export default function SettingsView({ subscription, usage, user, devices, clips
         <div className="settings-devices">
           {devices.map((device) => {
             const isOnline = device.last_seen_at &&
-              (Date.now() - new Date(device.last_seen_at).getTime()) < 5 * 60 * 1000
+              (Date.now() - new Date(device.last_seen_at).getTime()) < 10 * 60 * 1000
             return (
               <div key={device.id} className="settings-device">
                 <span className={`settings-device-dot ${isOnline ? 'settings-device-dot--on' : 'settings-device-dot--off'}`} />

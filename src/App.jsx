@@ -382,6 +382,15 @@ export default function App() {
     return () => clearInterval(interval)
   }, [user, encryptionEnabled])
 
+  // Heartbeat — update last_seen_at every 2 minutes so other devices see us as online
+  useEffect(() => {
+    if (!deviceId) return
+    const heartbeat = setInterval(() => {
+      updateDeviceLastSeen(deviceId)
+    }, 2 * 60 * 1000)
+    return () => clearInterval(heartbeat)
+  }, [deviceId])
+
   // Global keyboard shortcut — register once with ref
   const handleSend = useCallback(async () => {
     const text = input.trim()
@@ -1145,7 +1154,7 @@ export default function App() {
         <div className="footer-devices">
           {devices.slice(0, 3).map((device) => {
             const isOnline = device.last_seen_at &&
-              (Date.now() - new Date(device.last_seen_at).getTime()) < 5 * 60 * 1000
+              (Date.now() - new Date(device.last_seen_at).getTime()) < 10 * 60 * 1000
             return (
               <div
                 key={device.id}
