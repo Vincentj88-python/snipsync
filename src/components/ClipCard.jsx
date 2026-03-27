@@ -114,7 +114,7 @@ function FileThumbnail({ filePath, fileName, fileSize, onDownload }) {
   )
 }
 
-function PlatformIcon({ platform, size = 12, color = '#555' }) {
+function PlatformIcon({ platform, size = 12, color = 'rgba(255,255,255,0.35)' }) {
   if (platform === 'mac' || platform === 'darwin') {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
