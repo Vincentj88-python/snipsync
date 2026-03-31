@@ -318,3 +318,209 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
   update();
   setInterval(update, 1000);
 })();
+
+
+// ============================================
+// CURSOR GLOW FOLLOWER
+// ============================================
+
+(function () {
+  var glow = document.getElementById('cursor-glow');
+  if (!glow) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if ('ontouchstart' in window) return;
+
+  var mx = -500, my = -500;
+  var cx = -500, cy = -500;
+
+  document.addEventListener('mousemove', function (e) {
+    mx = e.clientX;
+    my = e.clientY;
+    if (!glow.classList.contains('active')) glow.classList.add('active');
+  });
+
+  document.addEventListener('mouseleave', function () {
+    glow.classList.remove('active');
+  });
+
+  (function animate() {
+    cx += (mx - cx) * 0.07;
+    cy += (my - cy) * 0.07;
+    glow.style.left = cx + 'px';
+    glow.style.top = cy + 'px';
+    requestAnimationFrame(animate);
+  })();
+})();
+
+
+// ============================================
+// MAGNETIC BUTTONS
+// ============================================
+
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if ('ontouchstart' in window) return;
+
+  var buttons = document.querySelectorAll('.btn-main, .nav-cta, .pricing-btn--pro, .waitlist-btn');
+  var strength = 0.3;
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('mousemove', function (e) {
+      var rect = btn.getBoundingClientRect();
+      var x = e.clientX - rect.left - rect.width / 2;
+      var y = e.clientY - rect.top - rect.height / 2;
+      btn.style.transition = 'transform 150ms ease-out';
+      btn.style.transform = 'translate(' + (x * strength) + 'px, ' + (y * strength) + 'px)';
+    });
+
+    btn.addEventListener('mouseleave', function () {
+      btn.style.transition = 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1)';
+      btn.style.transform = '';
+    });
+  });
+})();
+
+
+// ============================================
+// CIPHER TEXT SCRAMBLE — Encryption Section
+// ============================================
+
+(function () {
+  var encVisual = document.querySelector('.encryption-visual');
+  var cipherEl = document.getElementById('enc-cipher');
+  var plainBottomEl = document.getElementById('enc-plain-bottom');
+  if (!encVisual || !cipherEl || !plainBottomEl) return;
+
+  var plainText = '"API key: sk_live_abc123"';
+  var cipherText = 'x8Kf2mQ9v...bL7nP3w==';
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  var done = false;
+
+  function scramble(el, target, startText, duration) {
+    return new Promise(function (resolve) {
+      var len = Math.max(target.length, startText.length);
+      var t0 = performance.now();
+      (function step() {
+        var p = Math.min((performance.now() - t0) / duration, 1);
+        var out = '';
+        for (var i = 0; i < len; i++) {
+          var cp = Math.max(0, Math.min(1, (p - (i / len) * 0.5) / 0.5));
+          if (cp <= 0) out += (startText[i] || ' ');
+          else if (cp >= 1) out += (target[i] || '');
+          else out += chars[(Math.random() * chars.length) | 0];
+        }
+        el.textContent = out;
+        if (p < 1) requestAnimationFrame(step);
+        else { el.textContent = target; resolve(); }
+      })();
+    });
+  }
+
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting && !done) {
+        done = true;
+        // Set initial state: show plaintext everywhere
+        cipherEl.textContent = plainText;
+        plainBottomEl.textContent = cipherText;
+        // Phase 1: encrypt middle row, then Phase 2: decrypt bottom row
+        setTimeout(function () {
+          scramble(cipherEl, cipherText, plainText, 1400).then(function () {
+            setTimeout(function () {
+              scramble(plainBottomEl, plainText, cipherText, 1200);
+            }, 300);
+          });
+        }, 600);
+        obs.disconnect();
+      }
+    });
+  }, { threshold: 0.35 });
+
+  obs.observe(encVisual);
+})();
+
+
+// ============================================
+// HERO PARALLAX
+// ============================================
+
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.innerWidth < 768) return;
+
+  var content = document.getElementById('hero-content');
+  var mockup = document.getElementById('hero-mockup');
+  if (!content || !mockup) return;
+
+  var ticking = false;
+
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(function () {
+        if (!content.classList.contains('visible')) { ticking = false; return; }
+        var y = window.scrollY;
+        var max = window.innerHeight;
+        if (y < max) {
+          content.style.transform = 'translateY(' + (y * 0.12) + 'px)';
+          mockup.style.transform = 'translateY(' + (y * 0.06) + 'px)';
+          var fade = Math.max(0.15, 1 - (y / max) * 0.6);
+          content.style.opacity = fade;
+          mockup.style.opacity = fade;
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+})();
+
+
+// ============================================
+// COMPARISON TABLE REVEAL
+// ============================================
+
+(function () {
+  var table = document.querySelector('.comparison-table');
+  var rows = document.querySelectorAll('.comparison-row:not(.comparison-row--header)');
+  if (!table || !rows.length) return;
+
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        rows.forEach(function (row, i) {
+          setTimeout(function () { row.classList.add('revealed'); }, i * 120);
+        });
+        obs.disconnect();
+      }
+    });
+  }, { threshold: 0.15 });
+
+  obs.observe(table);
+})();
+
+
+// ============================================
+// MOCKUP 3D TILT ON HOVER
+// ============================================
+
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if ('ontouchstart' in window) return;
+
+  var tilt = document.getElementById('mockup-tilt');
+  var container = document.querySelector('.hero-mockup');
+  if (!tilt || !container) return;
+
+  container.addEventListener('mousemove', function (e) {
+    var rect = container.getBoundingClientRect();
+    var x = (e.clientX - rect.left) / rect.width - 0.5;
+    var y = (e.clientY - rect.top) / rect.height - 0.5;
+    tilt.style.transform = 'perspective(800px) rotateY(' + (x * 10) + 'deg) rotateX(' + (-y * 10) + 'deg)';
+    tilt.style.transition = 'transform 150ms ease-out';
+  });
+
+  container.addEventListener('mouseleave', function () {
+    tilt.style.transition = 'transform 600ms cubic-bezier(0.16, 1, 0.3, 1)';
+    tilt.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg)';
+  });
+})();
