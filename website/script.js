@@ -237,19 +237,17 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     btn.disabled = true;
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/waitlist-signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Prefer': 'return=minimal',
         },
         body: JSON.stringify({ email }),
       });
 
       if (res.ok) {
-        status.textContent = "You're on the list! We'll email you when SnipSync is ready.";
+        status.textContent = "You're on the list! Check your inbox for a welcome email.";
         status.className = 'waitlist-status waitlist-status--success';
         form.querySelector('.waitlist-input').value = '';
       } else if (res.status === 409) {

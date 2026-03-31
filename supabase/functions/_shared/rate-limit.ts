@@ -10,6 +10,7 @@ const MAX_REQUESTS: Record<string, number> = {
   'record-deletion': 3,
   'check-deleted': 10,
   'accept-invite': 10,
+  'waitlist-signup': 3,
   'default': 30,
 }
 
