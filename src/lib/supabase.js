@@ -128,11 +128,13 @@ export const getClips = (userId, limit = 50) =>
 
 const MAX_CLIP_LENGTH = 10000
 
-export const addClip = (userId, deviceId, content, type) => {
+export const addClip = (userId, deviceId, content, type, encrypted = false, nonce = null) => {
   if (content.length > MAX_CLIP_LENGTH) {
     return { data: null, error: { message: `Clip too long (max ${MAX_CLIP_LENGTH} characters)` } }
   }
-  return supabase.from('clips').insert({ user_id: userId, device_id: deviceId, content, type }).select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))').single()
+  const row = { user_id: userId, device_id: deviceId, content, type }
+  if (encrypted) { row.encrypted = true; row.nonce = nonce }
+  return supabase.from('clips').insert(row).select('*, devices(name, platform), clip_tags(tag_id, tags(id, name, color))').single()
 }
 
 export const deleteClip = (id) =>

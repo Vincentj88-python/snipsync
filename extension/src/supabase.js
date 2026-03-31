@@ -148,13 +148,15 @@ async function getClips(userId, limit = 30) {
   )
 }
 
-async function addClip(userId, deviceId, content, type) {
+async function addClip(userId, deviceId, content, type, encrypted = false, nonce = null) {
   if (content.length > 10000) {
     throw new Error('Clip too long (max 10,000 characters)')
   }
+  const body = { user_id: userId, device_id: deviceId, content, type }
+  if (encrypted) { body.encrypted = true; body.nonce = nonce }
   const result = await apiRequest('clips?select=*,devices(name,platform)', {
     method: 'POST',
-    body: { user_id: userId, device_id: deviceId, content, type },
+    body,
   })
   return Array.isArray(result) ? result[0] : result
 }
@@ -258,6 +260,15 @@ function detectType(text) {
   return 'note'
 }
 
+// ── Encryption settings ────────────────────────────
+
+async function getEncryptionSettings(userId) {
+  const result = await apiRequest(
+    `profiles?user_id=eq.${userId}&select=encryption_enabled,encrypted_master_key,key_salt,key_nonce&limit=1`
+  )
+  return result?.[0] || null
+}
+
 // Export everything
 window.SnipSync = {
   SUPABASE_URL,
@@ -278,6 +289,7 @@ window.SnipSync = {
   getMonthlyClipCount,
   getDeviceCount,
   detectType,
+  getEncryptionSettings,
 }
 
 })();

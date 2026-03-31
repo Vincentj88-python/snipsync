@@ -188,6 +188,8 @@ export default function SettingsView({ subscription, usage, user, devices, clips
   const [recoverToDisable, setRecoverToDisable] = useState(false)
   const [vaultLoading, setVaultLoading] = useState(false)
   const [vaultError, setVaultError] = useState('')
+  const [vaultFailCount, setVaultFailCount] = useState(0)
+  const [vaultUnlockDisabled, setVaultUnlockDisabled] = useState(false)
   const [migrationProgress, setMigrationProgress] = useState(null)
   const [recoveryPhrase, setRecoveryPhrase] = useState(null)
   const [recoveryInput, setRecoveryInput] = useState('')
@@ -482,9 +484,10 @@ export default function SettingsView({ subscription, usage, user, devices, clips
               <button
                 id="unlock-btn"
                 className="settings-upgrade-btn"
-                disabled={vaultLoading}
+                disabled={vaultLoading || vaultUnlockDisabled}
                 onClick={async () => {
                   if (!vaultPassword) { setVaultError('Please enter your vault password'); return }
+                  if (vaultUnlockDisabled) return
                   setVaultLoading(true)
                   try {
                     const settings = await getEncryptionSettings(user.id)
@@ -494,11 +497,17 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                       return
                     }
                     const masterKey = await unlockMasterKey(vaultPassword, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+                    setVaultFailCount(0)
                     onVaultUnlock(masterKey)
                     setVaultAction(null)
                     setVaultPassword('')
                   } catch (err) {
-                    setVaultError(err.message || 'Wrong password')
+                    const newCount = vaultFailCount + 1
+                    setVaultFailCount(newCount)
+                    const delay = Math.min(newCount * 2, 30)
+                    setVaultError(`Wrong password. Try again in ${delay}s.`)
+                    setVaultUnlockDisabled(true)
+                    setTimeout(() => setVaultUnlockDisabled(false), delay * 1000)
                   }
                   setVaultLoading(false)
                 }}
@@ -534,9 +543,10 @@ export default function SettingsView({ subscription, usage, user, devices, clips
               <button
                 className="settings-export-btn"
                 style={{ color: '#ef4444', borderColor: '#3a1a1a' }}
-                disabled={vaultLoading}
+                disabled={vaultLoading || vaultUnlockDisabled}
                 onClick={async () => {
                   if (!vaultPassword) { setVaultError('Please enter your vault password'); return }
+                  if (vaultUnlockDisabled) return
                   setVaultLoading(true)
                   try {
                     const settings = await getEncryptionSettings(user.id)
@@ -546,6 +556,7 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                       return
                     }
                     const masterKey = await unlockMasterKey(vaultPassword, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+                    setVaultFailCount(0)
                     setMigrationProgress('starting...')
                     const count = await decryptAllClips(user.id, masterKey)
                     setMigrationProgress(`${count} clips decrypted`)
@@ -555,7 +566,12 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                     setVaultPassword('')
                     setMigrationProgress(null)
                   } catch (err) {
-                    setVaultError(err.message || 'Wrong password')
+                    const newCount = vaultFailCount + 1
+                    setVaultFailCount(newCount)
+                    const delay = Math.min(newCount * 2, 30)
+                    setVaultError(`Wrong password. Try again in ${delay}s.`)
+                    setVaultUnlockDisabled(true)
+                    setTimeout(() => setVaultUnlockDisabled(false), delay * 1000)
                   }
                   setVaultLoading(false)
                 }}

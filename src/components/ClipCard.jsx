@@ -75,41 +75,13 @@ function FileThumbnail({ filePath, fileName, fileSize, onDownload }) {
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      background: '#0e1012',
-      border: '1px solid #1f2024',
-      borderRadius: '8px',
-      padding: '10px 12px',
-      marginBottom: '2px',
-    }}>
-      <span style={{ fontSize: '22px', lineHeight: 1 }}>{getFileIcon(fileName)}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '12px', color: '#e0e0e0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {fileName}
-        </div>
-        <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
-          {formatFileSize(fileSize)}
-        </div>
+    <div className="file-thumb">
+      <span className="file-thumb-icon">{getFileIcon(fileName)}</span>
+      <div className="file-thumb-info">
+        <div className="file-thumb-name">{fileName}</div>
+        <div className="file-thumb-size">{formatFileSize(fileSize)}</div>
       </div>
-      <button
-        onClick={handleDownload}
-        style={{
-          background: '#1a1a1a',
-          border: '1px solid #2a2a2a',
-          borderRadius: '6px',
-          padding: '4px 10px',
-          fontSize: '11px',
-          color: '#888',
-          cursor: 'pointer',
-          flexShrink: 0,
-          fontFamily: 'inherit',
-        }}
-      >
-        ↓
-      </button>
+      <button onClick={handleDownload} className="file-thumb-download">↓</button>
     </div>
   )
 }
@@ -175,7 +147,7 @@ function ContextMenu({ x, y, clip, onCopy, onPin, onDelete, onOpenUrl, onClose }
   )
 }
 
-export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpenUrl, removing, onLightbox, onDownloadFile }) {
+export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpenUrl, removing, onLightbox, onDownloadFile, index = 0 }) {
   const typeStyle = TYPE_STYLES[clip.type] || TYPE_STYLES.other
   const isCopied = copied === clip.id
   const isLink = clip.type === 'link'
@@ -204,7 +176,7 @@ export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpen
 
   return (
     <>
-      <div className={cardClass} style={{ borderLeftColor: typeStyle.border }} onContextMenu={handleContextMenu}>
+      <div className={cardClass} style={{ borderLeftColor: typeStyle.border, '--clip-index': Math.min(index, 10), '--clip-glow': `${typeStyle.border}33` }} onContextMenu={handleContextMenu}>
         {/* Top row */}
         <div className="clip-card-top">
           <span
@@ -228,7 +200,11 @@ export default function ClipCard({ clip, copied, onCopy, onPin, onDelete, onOpen
         </div>
 
         {/* Content */}
-        {isFile && clip.image_path ? (
+        {clip._decryptFailed ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '6px', fontSize: '11px', color: '#f87171' }}>
+            <span>&#128274;</span> Decryption failed — wrong key or corrupt data
+          </div>
+        ) : isFile && clip.image_path ? (
           <FileThumbnail filePath={clip.image_path} fileName={clip.content} fileSize={clip.image_size} onDownload={onDownloadFile} />
         ) : isImage && clip.image_path ? (
           <ImageThumbnail imagePath={clip.image_path} onLightbox={onLightbox} />

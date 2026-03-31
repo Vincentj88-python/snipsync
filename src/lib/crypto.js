@@ -92,7 +92,7 @@ const WORDLIST = [
 
 function generateRecoveryPhrase() {
   const words = []
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 16; i++) {
     const idx = nacl.randomBytes(1)[0] % WORDLIST.length
     words.push(WORDLIST[idx])
   }
@@ -151,7 +151,7 @@ export function decryptClip(encryptedContent, nonceB64, masterKey) {
   const nonce = decodeBase64(nonceB64)
   const decrypted = nacl.secretbox.open(encrypted, nonce, masterKey)
   if (!decrypted) {
-    return '[decryption failed]'
+    throw new Error('Decryption failed — wrong key or corrupt data')
   }
   return encodeUTF8(decrypted)
 }

@@ -296,7 +296,11 @@ export default function App() {
           if (masterKeyRef.current) {
             const decrypted = clipsData.map((clip) => {
               if (clip.encrypted && clip.nonce && clip.content !== '[image]') {
-                return { ...clip, content: decryptClip(clip.content, clip.nonce, masterKeyRef.current) }
+                try {
+                  return { ...clip, content: decryptClip(clip.content, clip.nonce, masterKeyRef.current) }
+                } catch {
+                  return { ...clip, _decryptFailed: true }
+                }
               }
               return clip
             })
@@ -332,7 +336,11 @@ export default function App() {
               // Decrypt if encrypted and vault is unlocked
               let clipData = data
               if (data.encrypted && data.nonce && data.content !== '[image]' && masterKeyRef.current) {
-                clipData = { ...data, content: decryptClip(data.content, data.nonce, masterKeyRef.current) }
+                try {
+                  clipData = { ...data, content: decryptClip(data.content, data.nonce, masterKeyRef.current) }
+                } catch {
+                  clipData = { ...data, _decryptFailed: true }
+                }
               }
               setClips((prev) => {
                 if (prev.some((c) => c.id === clipData.id)) return prev
@@ -396,6 +404,12 @@ export default function App() {
     const text = input.trim()
     if (!text || !user || !deviceId) return
 
+    // Block send if vault is locked
+    if (encryptionEnabled && !masterKeyRef.current) {
+      setToast({ message: 'Vault is locked. Unlock it first to send encrypted clips.', onDismiss: () => setToast(null) })
+      return
+    }
+
     // Check clip limit
     const plan = subscription?.plan || 'free'
     const limits = PLAN_LIMITS[plan]
@@ -421,7 +435,7 @@ export default function App() {
       clipEncrypted = true
     }
 
-    const { data, error } = await addClip(user.id, deviceId, contentToSave, type)
+    const { data, error } = await addClip(user.id, deviceId, contentToSave, type, clipEncrypted, clipNonce)
     if (error) {
       setInput(text)
       setToast({ message: error.message, onDismiss: () => setToast(null) })
@@ -432,10 +446,6 @@ export default function App() {
         if (prev.some((c) => c.id === data.id)) return prev
         return [displayClip, ...prev]
       })
-      // Mark as encrypted in DB if needed
-      if (clipEncrypted) {
-        await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
-      }
       setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
       setLastSyncedAt(new Date())
     }
@@ -472,6 +482,9 @@ export default function App() {
       const limits = PLAN_LIMITS[plan]
       if (usg && usg.clips >= limits.maxClipsPerMonth) return
 
+      // Block auto-capture if vault is locked
+      if (encryptionEnabled && !masterKeyRef.current) return
+
       const type = detectType(text)
       let contentToSave = text
       let clipEncrypted = false
@@ -482,11 +495,8 @@ export default function App() {
         clipEncrypted = true
         clipNonce = enc.nonce
       }
-      const { data, error } = await addClip(u.id, d, contentToSave, type)
+      const { data, error } = await addClip(u.id, d, contentToSave, type, clipEncrypted, clipNonce)
       if (!error && data) {
-        if (clipEncrypted) {
-          await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
-        }
         setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
       }
     })
@@ -504,6 +514,8 @@ export default function App() {
     const textHandler = window.electronAPI.onSnipText(async (text) => {
       const { user: u, deviceId: d, subscription: sub, usage: usg } = autoCaptureRef.current
       if (!u || !d || !text) return
+      // Block shortcut capture if vault is locked
+      if (encryptionEnabled && !masterKeyRef.current) return
       const plan = sub?.plan || 'free'
       const limits = PLAN_LIMITS[plan]
       if (usg && usg.clips >= limits.maxClipsPerMonth) return
@@ -518,16 +530,13 @@ export default function App() {
         clipEncrypted = true
         clipNonce = enc.nonce
       }
-      const { data } = await addClip(u.id, d, contentToSave, type)
+      const { data } = await addClip(u.id, d, contentToSave, type, clipEncrypted, clipNonce)
       if (data) {
         const displayClip = clipEncrypted ? { ...data, content: text, encrypted: true } : data
         setClips((prev) => {
           if (prev.some((c) => c.id === data.id)) return prev
           return [displayClip, ...prev]
         })
-        if (clipEncrypted) {
-          await supabase.from('clips').update({ encrypted: true, nonce: clipNonce }).eq('id', data.id)
-        }
         setUsage((prev) => ({ ...prev, clips: prev.clips + 1 }))
         setLastSyncedAt(new Date())
       }
@@ -912,11 +921,6 @@ export default function App() {
             </span>
           </div>
 
-          <div className="titlebar-device-badge">
-            <PlatformIcon platform={currentDevicePlatform} size={12} color="rgba(255,255,255,0.35)" />
-            {deviceName}
-          </div>
-
           {/* Teams */}
           <button
             className={`titlebar-gear ${view === 'teams' ? 'titlebar-gear--active' : ''}`}
@@ -1069,7 +1073,7 @@ export default function App() {
           </button>
         </div>
       ) : (
-        <>
+        <div className="view-content">
           {/* Input */}
           <InputArea
             input={input}
@@ -1120,10 +1124,11 @@ export default function App() {
                 }
               </div>
             ) : (
-              filteredClips.map((clip) => (
+              filteredClips.map((clip, i) => (
                 <ClipCard
                   key={clip.id}
                   clip={clip}
+                  index={i}
                   copied={copied}
                   onCopy={handleCopy}
                   onPin={handlePin}
@@ -1136,7 +1141,7 @@ export default function App() {
               ))
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Update banner */}

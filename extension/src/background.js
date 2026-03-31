@@ -53,7 +53,6 @@ chrome.commands.onCommand.addListener(async (command) => {
 async function createClipFromBackground(text) {
   const session = await chrome.storage.local.get(['sb_access_token', 'sb_user', 'sb_device_id'])
   if (!session.sb_access_token || !session.sb_user || !session.sb_device_id) {
-    // Not signed in — show badge
     chrome.action.setBadgeText({ text: '!' })
     chrome.action.setBadgeBackgroundColor({ color: '#ef4444' })
     return
@@ -67,6 +66,26 @@ async function createClipFromBackground(text) {
   if (/^(https?:\/\/|www\.)\S+/i.test(text)) type = 'link'
   else if (/\d{1,5}\s+\w+.*(?:street|st|ave|avenue|rd|road|blvd|drive|dr|lane|ln)/i.test(text)) type = 'address'
   else if (/^[\s\S]*[{}\[\]();=><][\s\S]*$/.test(text) && text.length < 300) type = 'code'
+
+  // Check if user has encryption enabled — if so, skip from background
+  // (background service worker can't prompt for vault password, so we
+  //  only send plaintext if encryption is OFF; otherwise show badge hint)
+  try {
+    const encRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?user_id=eq.${session.sb_user.id}&select=encryption_enabled&limit=1`,
+      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${session.sb_access_token}` } }
+    )
+    const encData = await encRes.json()
+    if (encData?.[0]?.encryption_enabled) {
+      // Can't encrypt from background — prompt user to open popup
+      chrome.action.setBadgeText({ text: '🔒' })
+      chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' })
+      setTimeout(() => chrome.action.setBadgeText({ text: '' }), 3000)
+      return
+    }
+  } catch {
+    // If check fails, proceed without encryption
+  }
 
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clips`, {
@@ -86,7 +105,6 @@ async function createClipFromBackground(text) {
     })
 
     if (res.ok) {
-      // Flash green badge briefly
       chrome.action.setBadgeText({ text: '✓' })
       chrome.action.setBadgeBackgroundColor({ color: '#22c55e' })
       setTimeout(() => chrome.action.setBadgeText({ text: '' }), 1500)

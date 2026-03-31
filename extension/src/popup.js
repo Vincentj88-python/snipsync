@@ -10,10 +10,13 @@ const {
   getClips, addClip, deleteClip, togglePinClip,
   getSubscription, getMonthlyClipCount, getDeviceCount,
   findDeviceByMachineId, registerDevice, updateDeviceLastSeen,
-  detectType, PLAN_LIMITS,
+  detectType, PLAN_LIMITS, getEncryptionSettings,
 } = window.SnipSync
 
+const { unlockMasterKey, encryptClip, decryptClip } = window.SnipCrypto || {}
+
 const app = document.getElementById('app')
+let masterKey = null // In-memory only, cleared on popup close
 let state = {
   user: null,
   clips: [],
@@ -23,6 +26,8 @@ let state = {
   filter: 'all',
   search: '',
   loading: true,
+  encryptionEnabled: false,
+  vaultLocked: false,
 }
 
 // ── Machine ID for extension ────────────────────────
@@ -37,6 +42,51 @@ function getExtensionMachineId() {
 function render() {
   if (state.loading) {
     app.innerHTML = `<div class="loading"><div class="spinner"></div></div>`
+    return
+  }
+
+  // Vault locked screen
+  if (state.user && state.encryptionEnabled && state.vaultLocked) {
+    app.innerHTML = `
+      <div class="vault-screen">
+        <div class="vault-icon">&#128274;</div>
+        <h3 class="vault-title">Vault locked</h3>
+        <p class="vault-desc">Enter your vault password to decrypt your clips.</p>
+        <div class="vault-form">
+          <input type="password" class="vault-input" id="vault-pwd" placeholder="Vault password" autocomplete="off" />
+          <button class="vault-btn" id="vault-unlock">Unlock</button>
+        </div>
+        <p class="vault-error" id="vault-error"></p>
+      </div>`
+    const pwdInput = document.getElementById('vault-pwd')
+    const errorEl = document.getElementById('vault-error')
+    pwdInput.focus()
+
+    async function doUnlock() {
+      const pwd = pwdInput.value
+      if (!pwd) return
+      document.getElementById('vault-unlock').textContent = 'Unlocking...'
+      try {
+        const settings = await getEncryptionSettings(state.user.id)
+        if (!settings?.encrypted_master_key) {
+          errorEl.textContent = 'Encryption settings not found'
+          document.getElementById('vault-unlock').textContent = 'Unlock'
+          return
+        }
+        masterKey = await unlockMasterKey(pwd, settings.encrypted_master_key, settings.key_salt, settings.key_nonce)
+        state.vaultLocked = false
+        await loadClips()
+        render()
+      } catch {
+        errorEl.textContent = 'Wrong password'
+        document.getElementById('vault-unlock').textContent = 'Unlock'
+        pwdInput.value = ''
+        pwdInput.focus()
+      }
+    }
+
+    document.getElementById('vault-unlock').addEventListener('click', doUnlock)
+    pwdInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doUnlock() })
     return
   }
 
@@ -214,12 +264,29 @@ async function handleSend() {
     return
   }
 
+  // Block send if vault is locked
+  if (state.encryptionEnabled && !masterKey) {
+    showToast('Vault is locked. Unlock it first.')
+    return
+  }
+
   const type = detectType(text)
   input.value = ''
 
   try {
-    const clip = await addClip(state.user.id, state.deviceId, text, type)
-    state.clips.unshift(clip)
+    let contentToSave = text
+    let clipEncrypted = false
+    let clipNonce = null
+    if (state.encryptionEnabled && masterKey) {
+      const enc = encryptClip(text, masterKey)
+      contentToSave = enc.encryptedContent
+      clipNonce = enc.nonce
+      clipEncrypted = true
+    }
+    const clip = await addClip(state.user.id, state.deviceId, contentToSave, type, clipEncrypted, clipNonce)
+    // Show decrypted content locally
+    const displayClip = clipEncrypted ? { ...clip, content: text } : clip
+    state.clips.unshift(displayClip)
     state.usage.clips++
     render()
   } catch (err) {
@@ -289,14 +356,36 @@ async function setupDevice() {
 async function loadClips() {
   if (!state.user) return
 
-  const [clips, sub, clipCount, deviceCount] = await Promise.all([
+  const [clips, sub, clipCount, deviceCount, encSettings] = await Promise.all([
     getClips(state.user.id),
     getSubscription(state.user.id),
     getMonthlyClipCount(state.user.id),
     getDeviceCount(state.user.id),
+    getEncryptionSettings(state.user.id),
   ])
 
-  state.clips = clips || []
+  // Check encryption status
+  state.encryptionEnabled = !!encSettings?.encryption_enabled
+  if (state.encryptionEnabled && !masterKey) {
+    state.vaultLocked = true
+  }
+
+  // Decrypt clips if possible
+  let decryptedClips = clips || []
+  if (masterKey && state.encryptionEnabled) {
+    decryptedClips = decryptedClips.map((clip) => {
+      if (clip.encrypted && clip.nonce && clip.content !== '[image]') {
+        try {
+          return { ...clip, content: decryptClip(clip.content, clip.nonce, masterKey) }
+        } catch {
+          return { ...clip, content: '[Decryption failed]', _decryptFailed: true }
+        }
+      }
+      return clip
+    })
+  }
+
+  state.clips = decryptedClips
   state.subscription = sub
   state.usage = { clips: clipCount, devices: deviceCount }
 }
