@@ -97,6 +97,7 @@ function PasswordInput({ value, onChange, placeholder, autoFocus, onKeyDown }) {
 }
 
 function RecoveryPhraseDisplay({ phrase, onDone }) {
+  const [copied, setCopied] = React.useState(false)
   const words = phrase.split(' ')
   return (
     <div className="settings-vault-form" style={{ background: '#0e1a0e', border: '1px solid #1a3a1a', borderRadius: '8px', padding: '12px' }}>
@@ -114,9 +115,24 @@ function RecoveryPhraseDisplay({ phrase, onDone }) {
       </div>
       <button
         className="settings-export-btn recovery-phrase-copy"
-        onClick={() => navigator.clipboard.writeText(phrase)}
+        onClick={() => {
+          try {
+            const ta = document.createElement('textarea')
+            ta.value = phrase
+            ta.style.position = 'fixed'
+            ta.style.opacity = '0'
+            document.body.appendChild(ta)
+            ta.select()
+            document.execCommand('copy')
+            document.body.removeChild(ta)
+          } catch {
+            navigator.clipboard?.writeText(phrase)
+          }
+          setCopied(true)
+          setTimeout(() => setCopied(false), 2000)
+        }}
       >
-        Copy phrase
+        {copied ? '\u2713 Copied!' : 'Copy phrase'}
       </button>
       <button className="settings-upgrade-btn" style={{ marginTop: '4px' }} onClick={onDone}>
         I've saved it
@@ -449,6 +465,7 @@ export default function SettingsView({ subscription, usage, user, devices, clips
                     setMigrationProgress(`${count} clips encrypted`)
                     onEncryptionChange(true, result.masterKey)
                     setRecoveryPhrase(result.recoveryPhrase)
+                    setVaultAction(null)
                     setVaultPassword('')
                     setVaultPasswordConfirm('')
                     setMigrationProgress(null)
