@@ -1,7 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const WEBHOOK_SECRET = Deno.env.get('LS_WEBHOOK_SECRET') || ''
+const WEBHOOK_SECRET = Deno.env.get('LS_WEBHOOK_SECRET')
+if (!WEBHOOK_SECRET) throw new Error('LS_WEBHOOK_SECRET is required')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 

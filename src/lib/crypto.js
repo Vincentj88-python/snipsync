@@ -262,8 +262,10 @@ export async function decryptAllClips(userId, masterKey) {
       count++
       continue
     }
-    const plaintext = decryptClip(clip.content, clip.nonce, masterKey)
-    if (plaintext === '[decryption failed]') {
+    let plaintext
+    try {
+      plaintext = decryptClip(clip.content, clip.nonce, masterKey)
+    } catch {
       throw new Error(`Failed to decrypt clip ${clip.id}. Aborting to prevent data loss.`)
     }
     await supabase.from('clips').update({

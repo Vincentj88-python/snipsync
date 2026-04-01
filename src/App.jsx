@@ -814,6 +814,7 @@ export default function App() {
       masterKeyRef.current.fill(0)
     }
     masterKeyRef.current = null
+    if (window.electronAPI?.stopClipboardWatch) window.electronAPI.stopClipboardWatch()
     localStorage.removeItem('snip_device_id')
     setClips([])
     setDevices([])

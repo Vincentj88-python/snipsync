@@ -728,8 +728,8 @@ export default function SettingsView({ subscription, usage, user, devices, clips
           <div className="settings-vault-form">
             <p className="settings-toggle-desc" style={{ marginBottom: '8px' }}>
               {recoverToDisable
-                ? 'Enter your 12-word recovery phrase to decrypt all clips and disable encryption.'
-                : 'Enter your 12-word recovery phrase to unlock your vault.'}
+                ? 'Enter your 16-word recovery phrase to decrypt all clips and disable encryption.'
+                : 'Enter your 16-word recovery phrase to unlock your vault.'}
             </p>
             <textarea
               className="settings-vault-input"
