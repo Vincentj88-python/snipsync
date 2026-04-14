@@ -271,8 +271,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
 // ============================================
 
 (function () {
-  // Set launch date to 14 days from 2026-03-24
-  const launchDate = new Date('2026-04-07T09:00:00Z');
+  const launchDate = new Date('2026-05-24T09:00:00Z');
 
   function update() {
     const now = Date.now();
