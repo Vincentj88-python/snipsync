@@ -451,7 +451,7 @@ Auto-updater checks GitHub Releases for newer versions.
 ### Required (.env)
 
 ```
-VITE_SUPABASE_URL=https://kohwpkwcopkslbtkczag.supabase.co
+VITE_SUPABASE_URL=https://api.snipsync.xyz
 VITE_SUPABASE_ANON_KEY=<anon-key>
 ```
 

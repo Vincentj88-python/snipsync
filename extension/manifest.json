@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SnipSync",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Clipboard sync across all your devices. Copy here, paste there.",
   "permissions": [
     "storage",
@@ -11,7 +11,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://kohwpkwcopkslbtkczag.supabase.co/*"
+    "https://api.snipsync.xyz/*"
   ],
   "action": {
     "default_popup": "popup.html",
